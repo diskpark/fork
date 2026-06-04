@@ -107,13 +107,14 @@ function setAdmin(v){localStorage.setItem('adminMode',v?'true':'false');}
 // Firebase에서 데이터 불러오기
 function syncFromFirebase(callback){
   fetch(FB_URL+'.json').then(function(r){return r.json();}).then(function(data){
-    if(!data){if(callback)callback();return;}
-    if(data.carDays&&Array.isArray(data.carDays))state.carDays=data.carDays;
-    if(data.absentWorkers&&Array.isArray(data.absentWorkers))state.absentWorkers=data.absentWorkers;
-    if(data.dayExcludes&&Array.isArray(data.dayExcludes))state.dayExcludes=data.dayExcludes;
+    if(data){
+      if(data.carDays&&Array.isArray(data.carDays))state.carDays=data.carDays;
+      if(data.absentWorkers&&Array.isArray(data.absentWorkers))state.absentWorkers=data.absentWorkers;
+      if(data.dayExcludes&&Array.isArray(data.dayExcludes))state.dayExcludes=data.dayExcludes;
+    }
     render();
     if(callback)callback();
-  }).catch(function(){if(callback)callback();});
+  }).catch(function(){render();if(callback)callback();});
 }
 
 // Firebase에 저장 (관리자만)
