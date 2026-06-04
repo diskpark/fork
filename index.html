@@ -74,10 +74,13 @@ td.site-td{padding:8px;font-weight:700;font-size:11px;background:#13132a;positio
 .et.absent{color:#ff6b6b}
 .et.vacation{color:#ffd93d}
 .et.seaworld{color:#88eeff}
-.lock-btn{position:fixed;top:12px;left:12px;z-index:150;width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:1px solid #ffffff22;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
+.lock-btn{position:fixed;top:12px;right:52px;z-index:150;width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:1px solid #ffffff22;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
 .lock-btn.admin{border-color:#ffd93d;color:#ffd93d;background:#ffd93d11}
-.sync-btn{position:fixed;bottom:20px;right:16px;z-index:150;padding:10px 18px;border-radius:20px;background:#4a9eff22;border:1px solid #4a9eff44;color:#4a9eff;font-size:13px;font-weight:700;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px}
+.top-btn-group{position:fixed;top:12px;left:12px;z-index:150;display:flex;gap:6px;align-items:center}
+.sync-btn{padding:7px 12px;border-radius:16px;background:#4a9eff22;border:1px solid #4a9eff44;color:#4a9eff;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
 .sync-btn.syncing{opacity:0.6}
+.test-btn{padding:7px 12px;border-radius:16px;background:#ff9f7f22;border:1px solid #ff9f7f44;color:#ff9f7f;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
+.test-btn.active{background:#ff9f7f44;border-color:#ff9f7f}
 .disabled-btn{opacity:0.35;pointer-events:none}
 .settings-btn{position:fixed;top:12px;right:12px;z-index:150;width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:1px solid #ffffff22;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
 .settings-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:200;display:flex;align-items:flex-end;justify-content:center}
@@ -292,6 +295,7 @@ var state={
   firstWorker:(function(){try{var s=JSON.parse(localStorage.getItem('firstWorker')||'null');if(s&&s.date===new Date().toDateString())return s.name||'';}catch(e){}return '';})(),
   myName:localStorage.getItem('myName')||'',
   absentWorkers:[],
+  testMode:false,
   dayExcludes:(function(){try{var s=JSON.parse(localStorage.getItem('dayExcludes')||'null');if(s&&s.date===new Date().toDateString()&&Array.isArray(s.data))return s.data;}catch(e){}return [{},{},{},{},{},{},{}];})(),
   sundayCount:parseInt(localStorage.getItem('sundayCount')||'4',10),
   history:(function(){try{return JSON.parse(localStorage.getItem('dayHistory')||'[]');}catch(e){return[];}})(),
@@ -334,7 +338,7 @@ function render(){
   var app=document.getElementById("app");
   app.innerHTML="";
 
-  // 자물쇠 버튼
+  // 자물쇠 버튼 (설정 왼쪽)
   var lockBtn=h("div",{className:"lock-btn"+(isAdmin()?" admin":"")},isAdmin()?"🔓":"🔒");
   lockBtn.onclick=function(){
     if(isAdmin()){
@@ -347,18 +351,34 @@ function render(){
   };
   app.appendChild(lockBtn);
 
-  // 동기화 버튼
+  // 상단 왼쪽 버튼 그룹 (동기화 + 테스트)
+  var topBtnGroup=h("div",{className:"top-btn-group"});
+
   var syncBtn=h("div",{className:"sync-btn"},"🔄 동기화");
   syncBtn.onclick=function(){
     syncBtn.className="sync-btn syncing";
-    syncBtn.textContent="⏳ 동기화중...";
+    syncBtn.textContent="⏳ ...";
     syncFromFirebase(function(){
       syncBtn.className="sync-btn";
       syncBtn.textContent="✅ 동기화됨";
       setTimeout(function(){syncBtn.textContent="🔄 동기화";},2000);
+      setState({testMode:false});
     });
   };
-  app.appendChild(syncBtn);
+  topBtnGroup.appendChild(syncBtn);
+
+  var testBtn=h("div",{className:"test-btn"+(state.testMode?" active":"")},"🎮 테스트"+(state.testMode?" ON":""));
+  testBtn.onclick=function(){
+    var next=!state.testMode;
+    if(!next){
+      // 테스트 종료 → Firebase 동기화
+      syncFromFirebase(function(){setState({testMode:false});});
+    } else {
+      setState({testMode:true});
+    }
+  };
+  topBtnGroup.appendChild(testBtn);
+  app.appendChild(topBtnGroup);
 
   var settBtn=h("div",{className:"settings-btn"},"⚙️");
   settBtn.onclick=function(){setState({settingsOpen:true});};
@@ -368,7 +388,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v6.3</span>";
+  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v6.4</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -390,11 +410,12 @@ function render(){
     var col=h("div",{className:"day-col"});
     col.appendChild(h("div",{className:"day-label",style:"color:"+(isWe?"#ff6b6b":"#aaa")},day));
     col.appendChild(h("div",{className:"day-date"},wd[idx]));
-    var btnY=h("div",{className:"btn"+(val===true?" on-yes":"")+(isAdmin()?"":" disabled-btn")},"있음");
-    if(isAdmin()){(function(i){btnY.onclick=function(){toggleCar(i,true);};})(idx);}
+    var canEdit=isAdmin()||state.testMode;
+    var btnY=h("div",{className:"btn"+(val===true?" on-yes":"")+(canEdit?"":" disabled-btn")},"있음");
+    if(canEdit){(function(i){btnY.onclick=function(){toggleCar(i,true);};})(idx);}
     col.appendChild(btnY);
-    var btnN=h("div",{className:"btn"+(val===false?" on-no":"")+(isAdmin()?"":" disabled-btn")},"없음");
-    if(isAdmin()){(function(i){btnN.onclick=function(){toggleCar(i,false);};})(idx);}
+    var btnN=h("div",{className:"btn"+(val===false?" on-no":"")+(canEdit?"":" disabled-btn")},"없음");
+    if(canEdit){(function(i){btnN.onclick=function(){toggleCar(i,false);};})(idx);}
     col.appendChild(btnN);
     var btnE=h("div",{className:"btn"+(exCount>0?" has-excl":" no-excl")});
     if(exCount>0){
@@ -852,10 +873,12 @@ function selectFirstWorker(name){
   }
 }
 function toggleCar(idx,val){
-  if(!isAdmin())return;
+  if(!isAdmin()&&!state.testMode)return;
   var c=state.carDays.slice();c[idx]=c[idx]===val?null:val;
-  localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:c}));
-  saveCarDays(c);
+  if(isAdmin()){
+    localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:c}));
+    saveCarDays(c);
+  }
   setState({carDays:c});
 }
 function toggleExcl(idx,name){
