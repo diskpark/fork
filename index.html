@@ -114,6 +114,8 @@ function syncFromFirebase(callback){
       if(data.carDays&&Array.isArray(data.carDays))state.carDays=data.carDays;
       if(data.absentWorkers&&Array.isArray(data.absentWorkers))state.absentWorkers=data.absentWorkers;
       if(data.dayExcludes&&Array.isArray(data.dayExcludes))state.dayExcludes=data.dayExcludes;
+      if(typeof data.sundayCount==='number')state.sundayCount=data.sundayCount;
+      if(data.firstWorker)state.firstWorker=data.firstWorker;
     }
     render();
     if(callback)callback();
@@ -124,6 +126,14 @@ function syncFromFirebase(callback){
 function saveCarDays(days){
   if(!isAdmin())return;
   fetch(FB_URL+'/carDays.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(days)});
+}
+function saveSundayCount(cnt){
+  if(!isAdmin())return;
+  fetch(FB_URL+'/sundayCount.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cnt)});
+}
+function saveFirstWorker(name){
+  if(!isAdmin())return;
+  fetch(FB_URL+'/firstWorker.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(name)});
 }
 function saveAbsentWorkers(workers){
   if(!isAdmin())return;
@@ -388,7 +398,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v6.4</span>";
+  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v6.5</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -458,14 +468,14 @@ function render(){
     infoLeft.appendChild(infoLine);
   }
   var infoRight=h("div",{style:"display:flex;flex-direction:column;align-items:flex-end;gap:2px"});
-  var lbl2=h("div",{style:"font-size:11px;color:#888"},"인원");
+  var lbl2=h("div",{style:"font-size:11px;color:#888"},"일요근무인원");
   var sr2=document.createElement("div");
   sr2.style.cssText="display:flex;align-items:center;gap:3px";
   var bm2=h("div",{className:"sun-btn"},"-");
-  bm2.onclick=function(){var v=Math.max(0,state.sundayCount-1);localStorage.setItem('sundayCount',v);setState({sundayCount:v});};
+  bm2.onclick=function(){if(!isAdmin())return;var v=Math.max(0,state.sundayCount-1);localStorage.setItem('sundayCount',v);saveSundayCount(v);setState({sundayCount:v});};
   var cnt2=h("div",{className:"sun-cnt",style:"color:"+(sc>0?"#ffd93d":"#555")},String(sc));
   var bp2=h("div",{className:"sun-btn"},"+");
-  bp2.onclick=function(){var v=Math.min(29,state.sundayCount+1);localStorage.setItem('sundayCount',v);setState({sundayCount:v});};
+  bp2.onclick=function(){if(!isAdmin())return;var v=Math.min(29,state.sundayCount+1);localStorage.setItem('sundayCount',v);saveSundayCount(v);setState({sundayCount:v});};
   sr2.appendChild(bm2);sr2.appendChild(cnt2);sr2.appendChild(bp2);
   infoRight.appendChild(lbl2);infoRight.appendChild(sr2);
   bottomRow.appendChild(infoLeft);bottomRow.appendChild(infoRight);
@@ -509,15 +519,18 @@ function render(){
 
   // 대양 1번
   var d1Card=h("div",{className:"card",style:"border:1px solid #4a9eff22"});
-  var d1Head=h("div",{style:"display:flex;justify-content:space-between;align-items:center;cursor:pointer"});
+  var d1Head=h("div",{style:"display:flex;justify-content:space-between;align-items:center;"+(isAdmin()?"cursor:pointer":"")});
   var d1TitleEl=document.createElement("div");
   d1TitleEl.style.cssText="font-size:11px;font-weight:700;letter-spacing:2px;color:#4a9eff";
-  d1TitleEl.textContent="▪ 오늘 대양 · 1번 선택"+(state.firstWorker?" · "+state.firstWorker:"");
-  var d1Toggle=h("div",{style:"color:#aaa;font-size:11px;font-weight:700"},state.d1Open?"▲ 접기":"▼ 펼치기");
-  d1Head.appendChild(d1TitleEl);d1Head.appendChild(d1Toggle);
-  d1Head.onclick=function(){var next=!state.d1Open;localStorage.setItem('d1Open',next);setState({d1Open:next});};
+  d1TitleEl.textContent="▪ 대양 1번"+(state.firstWorker?" · "+state.firstWorker:"" );
+  d1Head.appendChild(d1TitleEl);
+  if(isAdmin()){
+    var d1Toggle=h("div",{style:"color:#aaa;font-size:11px;font-weight:700"},state.d1Open?"▲ 접기":"▼ 펼치기");
+    d1Head.appendChild(d1Toggle);
+    d1Head.onclick=function(){var next=!state.d1Open;localStorage.setItem('d1Open',next);setState({d1Open:next});};
+  }
   d1Card.appendChild(d1Head);
-  if(state.d1Open){
+  if(isAdmin()&&state.d1Open){
     var d1Grid=h("div",{className:"grid4",style:"margin-top:10px"});
     var hist=state.history||[];
     WORKERS.forEach(function(name){
@@ -866,9 +879,11 @@ function selectFirstWorker(name){
     if(hist.length>2)hist=hist.slice(0,2);
     localStorage.setItem('dayHistory',JSON.stringify(hist));
     localStorage.setItem('firstWorker',JSON.stringify({date:today,name:newName}));
+    saveFirstWorker(newName);
     setState({firstWorker:newName,history:hist});
   } else {
     localStorage.setItem('firstWorker',JSON.stringify({date:new Date().toDateString(),name:newName}));
+    saveFirstWorker(newName);
     setState({firstWorker:newName});
   }
 }
