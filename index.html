@@ -187,7 +187,7 @@ function startFbListener(){
   fbListening=true;
   setInterval(function(){
     if(!document.hidden)syncFromFirebase(null);
-  },30000);
+  },600000);
 }
 
 var WORKERS=["이원훈","장형규","조현철","박진호","홍인석","하정남","황정호","김현진","전창범","오규종","김경훈","정철수","황인태","안찬범","김상원","이동현","김태민","김성환","김세영","홍원진","이재일","이준영","김태호","김택성","채관기","김재원","장병숙","윤광덕","박성기"];
@@ -390,6 +390,11 @@ function render(){
   var app=document.getElementById("app");
   app.innerHTML="";
 
+  // 관리자 모드 텍스트 (자물쇠 왼쪽)
+  if(isAdmin()){
+    var adminLabel=h("div",{style:"position:fixed;top:16px;right:92px;z-index:150;font-size:12px;font-weight:900;color:#ffd93d;letter-spacing:1px;text-shadow:0 0 8px #ffd93d88"},"관리자 모드");
+    app.appendChild(adminLabel);
+  }
   // 자물쇠 버튼 (설정 왼쪽)
   var lockBtn=h("div",{className:"lock-btn"+(isAdmin()?" admin":"")},isAdmin()?"🔓":"🔒");
   lockBtn.onclick=function(){
@@ -427,11 +432,23 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v6.6</span>";
+  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v6.7</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
-  reloadBtn.onclick=function(){location.reload();};
+  reloadBtn.onclick=function(){
+    if(sessionStorage.getItem('reloaded')){
+      reloadBtn.style.opacity='0.3';
+      reloadBtn.style.pointerEvents='none';
+      return;
+    }
+    sessionStorage.setItem('reloaded','1');
+    location.reload();
+  };
+  if(sessionStorage.getItem('reloaded')){
+    reloadBtn.style.opacity='0.3';
+    reloadBtn.style.pointerEvents='none';
+  }
   subEl.appendChild(reloadBtn);
   htitle.appendChild(subEl);
   htitle.appendChild(h("div",{className:"header-date"},"오늘 · "+fmtToday()));
