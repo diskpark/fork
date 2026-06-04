@@ -117,9 +117,45 @@ function syncFromFirebase(callback){
       if(typeof data.sundayCount==='number')state.sundayCount=data.sundayCount;
       if(data.firstWorker)state.firstWorker=data.firstWorker;
     }
+    // 다음날 대양1번 자동 계산
+    autoSetFirstWorker();
     render();
     if(callback)callback();
-  }).catch(function(){render();if(callback)callback();});
+  }).catch(function(){
+    autoSetFirstWorker();
+    render();
+    if(callback)callback();
+  });
+}
+
+function autoSetFirstWorker(){
+  // Firebase에서 받은 firstWorker가 오늘 날짜가 아니면 자동 계산
+  var saved=null;
+  try{saved=JSON.parse(localStorage.getItem('firstWorker')||'null');}catch(e){}
+  var todayStr=new Date().toDateString();
+  if(saved&&saved.date===todayStr&&saved.name)return; // 오늘 이미 설정됨
+
+  // 전날 history에서 대양 1번 다음 사람 계산
+  var hist=state.history||[];
+  if(hist.length===0)return;
+  var yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  var yStr=yesterday.toDateString();
+  var yEntry=hist.find(function(h){return h.date===yStr;});
+  if(!yEntry||!yEntry.name)return;
+
+  // 전날 대양1번의 다음 순번
+  var idx=WORKERS.indexOf(yEntry.name);
+  if(idx<0)return;
+  var absent=state.absentWorkers||[];
+  var next=idx;
+  for(var i=1;i<=N;i++){
+    next=(idx+i)%N;
+    if(absent.indexOf(WORKERS[next])<0)break;
+  }
+  var newFirst=WORKERS[next];
+  state.firstWorker=newFirst;
+  localStorage.setItem('firstWorker',JSON.stringify({date:todayStr,name:newFirst}));
+  if(isAdmin())saveFirstWorker(newFirst);
 }
 
 // Firebase에 저장 (관리자만)
@@ -302,7 +338,13 @@ var state={
     try{var s=JSON.parse(localStorage.getItem('carPlan')||'null');if(s&&s.date===new Date().toDateString()&&Array.isArray(s.days))return s.days;}catch(e){}
     var days=[null,null,null,null,null,null,null];var wk=getWeekDays();for(var i=0;i<wk.length;i++){if(wk[i]==="일")days[i]=false;}return days;
   })(),
-  firstWorker:(function(){try{var s=JSON.parse(localStorage.getItem('firstWorker')||'null');if(s&&s.date===new Date().toDateString())return s.name||'';}catch(e){}return '';})(),
+  firstWorker:(function(){
+    try{
+      var s=JSON.parse(localStorage.getItem('firstWorker')||'null');
+      if(s&&s.date===new Date().toDateString())return s.name||'';
+    }catch(e){}
+    return '';
+  })(),
   myName:localStorage.getItem('myName')||'',
   absentWorkers:[],
   testMode:false,
@@ -312,7 +354,7 @@ var state={
   settings:{font:"system",size:4,skin:"dark"},
   popupDay:null,vacPopup:false,settingsOpen:false,
   myNameOpen:localStorage.getItem('myNameOpen')!=='false',
-  d1Open:localStorage.getItem('d1Open')!=='false',
+  d1Open:localStorage.getItem('d1Open')==='true',
   weekDates:getWeekDates(),weekDays:getWeekDays(),weekDateObjs:getWeekDateObjs()
 };
 
@@ -372,22 +414,9 @@ function render(){
       syncBtn.className="sync-btn";
       syncBtn.textContent="✅ 동기화됨";
       setTimeout(function(){syncBtn.textContent="🔄 동기화";},2000);
-      setState({testMode:false});
     });
   };
   topBtnGroup.appendChild(syncBtn);
-
-  var testBtn=h("div",{className:"test-btn"+(state.testMode?" active":"")},"🎮 테스트"+(state.testMode?" ON":""));
-  testBtn.onclick=function(){
-    var next=!state.testMode;
-    if(!next){
-      // 테스트 종료 → Firebase 동기화
-      syncFromFirebase(function(){setState({testMode:false});});
-    } else {
-      setState({testMode:true});
-    }
-  };
-  topBtnGroup.appendChild(testBtn);
   app.appendChild(topBtnGroup);
 
   var settBtn=h("div",{className:"settings-btn"},"⚙️");
@@ -398,7 +427,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v6.5</span>";
+  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v6.6</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -420,12 +449,11 @@ function render(){
     var col=h("div",{className:"day-col"});
     col.appendChild(h("div",{className:"day-label",style:"color:"+(isWe?"#ff6b6b":"#aaa")},day));
     col.appendChild(h("div",{className:"day-date"},wd[idx]));
-    var canEdit=isAdmin()||state.testMode;
-    var btnY=h("div",{className:"btn"+(val===true?" on-yes":"")+(canEdit?"":" disabled-btn")},"있음");
-    if(canEdit){(function(i){btnY.onclick=function(){toggleCar(i,true);};})(idx);}
+    var btnY=h("div",{className:"btn"+(val===true?" on-yes":"")},"있음");
+    (function(i){btnY.onclick=function(){toggleCar(i,true);};})(idx);
     col.appendChild(btnY);
-    var btnN=h("div",{className:"btn"+(val===false?" on-no":"")+(canEdit?"":" disabled-btn")},"없음");
-    if(canEdit){(function(i){btnN.onclick=function(){toggleCar(i,false);};})(idx);}
+    var btnN=h("div",{className:"btn"+(val===false?" on-no":"")},"없음");
+    (function(i){btnN.onclick=function(){toggleCar(i,false);};})(idx);
     col.appendChild(btnN);
     var btnE=h("div",{className:"btn"+(exCount>0?" has-excl":" no-excl")});
     if(exCount>0){
@@ -435,8 +463,7 @@ function render(){
       if(swCnt>0)parts.push("씨"+swCnt);
       btnE.textContent=parts.join(" ");
     } else {btnE.textContent="제외";}
-    if(isAdmin()){(function(i){btnE.onclick=function(){setState({popupDay:i});};})(idx);}
-    else{btnE.className+=" disabled-btn";}
+    (function(i){btnE.onclick=function(){setState({popupDay:i});};})(idx);
     col.appendChild(btnE);
 
     dayRow.appendChild(col);
@@ -472,10 +499,10 @@ function render(){
   var sr2=document.createElement("div");
   sr2.style.cssText="display:flex;align-items:center;gap:3px";
   var bm2=h("div",{className:"sun-btn"},"-");
-  bm2.onclick=function(){if(!isAdmin())return;var v=Math.max(0,state.sundayCount-1);localStorage.setItem('sundayCount',v);saveSundayCount(v);setState({sundayCount:v});};
+  bm2.onclick=function(){var v=Math.max(0,state.sundayCount-1);localStorage.setItem('sundayCount',v);if(isAdmin())saveSundayCount(v);setState({sundayCount:v});};
   var cnt2=h("div",{className:"sun-cnt",style:"color:"+(sc>0?"#ffd93d":"#555")},String(sc));
   var bp2=h("div",{className:"sun-btn"},"+");
-  bp2.onclick=function(){if(!isAdmin())return;var v=Math.min(29,state.sundayCount+1);localStorage.setItem('sundayCount',v);saveSundayCount(v);setState({sundayCount:v});};
+  bp2.onclick=function(){var v=Math.min(29,state.sundayCount+1);localStorage.setItem('sundayCount',v);if(isAdmin())saveSundayCount(v);setState({sundayCount:v});};
   sr2.appendChild(bm2);sr2.appendChild(cnt2);sr2.appendChild(bp2);
   infoRight.appendChild(lbl2);infoRight.appendChild(sr2);
   bottomRow.appendChild(infoLeft);bottomRow.appendChild(infoRight);
@@ -524,13 +551,11 @@ function render(){
   d1TitleEl.style.cssText="font-size:11px;font-weight:700;letter-spacing:2px;color:#4a9eff";
   d1TitleEl.textContent="▪ 대양 1번"+(state.firstWorker?" · "+state.firstWorker:"" );
   d1Head.appendChild(d1TitleEl);
-  if(isAdmin()){
-    var d1Toggle=h("div",{style:"color:#aaa;font-size:11px;font-weight:700"},state.d1Open?"▲ 접기":"▼ 펼치기");
-    d1Head.appendChild(d1Toggle);
-    d1Head.onclick=function(){var next=!state.d1Open;localStorage.setItem('d1Open',next);setState({d1Open:next});};
-  }
+  var d1Toggle=h("div",{style:"color:#aaa;font-size:11px;font-weight:700"},state.d1Open?"▲ 접기":"▼ 펼치기");
+  d1Head.appendChild(d1Toggle);
+  d1Head.onclick=function(){var next=!state.d1Open;localStorage.setItem('d1Open',next);setState({d1Open:next});};
   d1Card.appendChild(d1Head);
-  if(isAdmin()&&state.d1Open){
+  if(state.d1Open){
     var d1Grid=h("div",{className:"grid4",style:"margin-top:10px"});
     var hist=state.history||[];
     WORKERS.forEach(function(name){
@@ -888,7 +913,6 @@ function selectFirstWorker(name){
   }
 }
 function toggleCar(idx,val){
-  if(!isAdmin()&&!state.testMode)return;
   var c=state.carDays.slice();c[idx]=c[idx]===val?null:val;
   if(isAdmin()){
     localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:c}));
@@ -897,7 +921,6 @@ function toggleCar(idx,val){
   setState({carDays:c});
 }
 function toggleExcl(idx,name){
-  if(!isAdmin())return;
   var d=state.dayExcludes.map(function(e,i){
     if(i!==idx)return e;
     var u=Object.assign({},e);
