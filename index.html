@@ -444,7 +444,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무 <span style='color:#4a9eff44;font-size:10px'>v8.1</span>";
+  subEl.innerHTML="주간예상근무 <span style='color:#4a9eff44;font-size:10px'>v8.2</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -842,7 +842,7 @@ function renderPopup(idx,wk,wd,merged,dayExcl){
   pclose.onclick=function(){setState({popupDay:null});};
   phead.appendChild(ptitle);phead.appendChild(pclose);
   inner.appendChild(phead);
-  inner.appendChild(h("div",{className:"phint"},"▪ 제외 인원 (탭: 없음→결근→휴가→씨월드→없음)"));
+  inner.appendChild(h("div",{className:"phint"},"▪ 제외 인원 (탭: 없음→결근→씨월드→없음)"));
   var grid=h("div",{className:"grid4"});
   WORKERS.forEach(function(name){
     var isAbsentWorker=(state.absentWorkers||[]).indexOf(name)>=0;
