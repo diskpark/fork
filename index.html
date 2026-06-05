@@ -993,14 +993,20 @@ function startVesselTracking(){
     vesselWS.onmessage=function(e){
       try{
         var list=JSON.parse(e.data);
-        list.forEach(function(v){
-          if(vesselStates[v.id]!==undefined){
-            vesselStates[v.id]=v;
+        list.forEach(function(d){
+          if(vesselStates[d.id]!==undefined){
+            vesselStates[d.id].status=d.status||'connecting';
+            vesselStates[d.id].speed=d.speed!=null?d.speed+' kts':'-';
+            vesselStates[d.id].course=d.course!=null?d.course+'°':'-';
+            vesselStates[d.id].dest=d.dest||'-';
+            vesselStates[d.id].lat=d.lat||null;
+            vesselStates[d.id].lon=d.lon||null;
+            vesselStates[d.id].updated=d.updated||'-';
           }
         });
         refreshVesselCards();
         VESSELS.forEach(function(v){if(vesselDetailId===v.id)updateVesselDetail(v.id);});
-      }catch(err){}
+      }catch(err){console.log('msg err',err);}
     };
     vesselWS.onerror=function(){
       VESSELS.forEach(function(v){vesselStates[v.id].status='error';});
