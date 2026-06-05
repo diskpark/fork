@@ -444,7 +444,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="FORKLIFT WEEKLY SCHEDULE <span style='color:#4a9eff44;font-size:10px'>v7.3</span>";
+  subEl.innerHTML="주간예상근무 <span style='color:#4a9eff44;font-size:10px'>v8.0</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -994,19 +994,19 @@ function startVesselTracking(){
       try{
         var list=JSON.parse(e.data);
         list.forEach(function(d){
-          if(vesselStates[d.id]!==undefined){
-            vesselStates[d.id].status=d.status||'connecting';
-            vesselStates[d.id].speed=d.speed!=null?d.speed+' kts':'-';
-            vesselStates[d.id].course=d.course!=null?d.course+'°':'-';
-            vesselStates[d.id].dest=d.dest||'-';
-            vesselStates[d.id].lat=d.lat||null;
-            vesselStates[d.id].lon=d.lon||null;
-            vesselStates[d.id].updated=d.updated||'-';
-          }
+          var st=vesselStates[d.id];
+          if(!st)return;
+          st.status=d.status||'connecting';
+          st.speed=d.speed!=null?d.speed+' kts':'-';
+          st.course=d.course!=null?d.course+'°':'-';
+          st.dest=d.dest||'-';
+          st.lat=d.lat||null;
+          st.lon=d.lon||null;
+          st.updated=d.updated||'-';
         });
         refreshVesselCards();
         VESSELS.forEach(function(v){if(vesselDetailId===v.id)updateVesselDetail(v.id);});
-      }catch(err){console.log('msg err',err);}
+      }catch(err){console.log('ws msg err',err);}
     };
     vesselWS.onerror=function(){
       VESSELS.forEach(function(v){vesselStates[v.id].status='error';});
