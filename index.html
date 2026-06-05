@@ -982,35 +982,24 @@ function loadLeaflet(cb){
 
 function startVesselTracking(){
   if(vesselWS)return;
+  // 나스 중계 서버 연결 (https면 wss, http면 ws 자동 선택)
+  var wsUrl=(location.protocol==='https:'?'wss://':'ws://')+location.hostname+':4443';
   try{
-    vesselWS=new WebSocket('wss://stream.aisstream.io/v0/stream');
+    vesselWS=new WebSocket(wsUrl);
     vesselWS.onopen=function(){
-      vesselWS.send(JSON.stringify({
-        APIKey:VESSEL_API_KEY,
-        BoundingBoxes:[[[-90,-180],[90,180]]],
-        FilterMessageTypes:['PositionReport'],
-        FiltersShipMMSI:VESSELS.map(function(v){return v.mmsi;})
-      }));
       VESSELS.forEach(function(v){vesselStates[v.id].status='connecting';});
       refreshVesselCards();
     };
     vesselWS.onmessage=function(e){
       try{
-        var msg=JSON.parse(e.data);
-        var pos=msg.Message&&msg.Message.PositionReport;
-        if(!pos)return;
-        var mmsi=String((msg.MetaData&&msg.MetaData.MMSI)||'');
-        var vessel=VESSELS.find(function(v){return v.mmsi===mmsi;});
-        if(!vessel)return;
-        var st=vesselStates[vessel.id];
-        st.status='live';
-        st.speed=(pos.Sog||0).toFixed(1)+' kts';
-        st.course=Math.round(pos.Cog||0)+'°';
-        st.dest=((msg.MetaData&&msg.MetaData.Destination)||'').trim()||'-';
-        st.lat=pos.Latitude;st.lon=pos.Longitude;
-        st.updated=new Date().toLocaleTimeString('ko-KR');
+        var list=JSON.parse(e.data);
+        list.forEach(function(v){
+          if(vesselStates[v.id]!==undefined){
+            vesselStates[v.id]=v;
+          }
+        });
         refreshVesselCards();
-        if(vesselDetailId===vessel.id)updateVesselDetail(vessel.id);
+        VESSELS.forEach(function(v){if(vesselDetailId===v.id)updateVesselDetail(v.id);});
       }catch(err){}
     };
     vesselWS.onerror=function(){
