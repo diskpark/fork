@@ -390,15 +390,13 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
 
 var state={
   carDays:(function(){
-    try{var s=JSON.parse(localStorage.getItem('carPlan')||'null');if(s&&s.date===new Date().toDateString()&&Array.isArray(s.days))return s.days;}catch(e){}
+    // 관리자는 로컬 캐시 사용, 일반 사용자는 Firebase 동기화 후 덮어쓰므로 기본값만
+    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('carPlan')||'null');if(s&&s.date===new Date().toDateString()&&Array.isArray(s.days))return s.days;}catch(e){}}
     var mon=localStorage.getItem('monStart')==='true';
     var days=[null,null,null,null,null,null,null];var wk=getWeekDays(mon);for(var i=0;i<wk.length;i++){if(wk[i]==="일")days[i]=false;}return days;
   })(),
   firstWorker:(function(){
-    try{
-      var s=JSON.parse(localStorage.getItem('firstWorker')||'null');
-      if(s&&s.date===new Date().toDateString())return s.name||'';
-    }catch(e){}
+    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('firstWorker')||'null');if(s&&s.date===new Date().toDateString())return s.name||'';}catch(e){}}
     return '';
   })(),
   myName:localStorage.getItem('myName')||'',
@@ -406,8 +404,14 @@ var state={
   testMode:false,
   vesselPopup:false,
   vesselData:null,
-  dayExcludes:(function(){try{var s=JSON.parse(localStorage.getItem('dayExcludes')||'null');if(s&&s.date===new Date().toDateString()&&Array.isArray(s.data))return s.data;}catch(e){}return [{},{},{},{},{},{},{}];})(),
-  sundayCount:parseInt(localStorage.getItem('sundayCount')||'4',10),
+  dayExcludes:(function(){
+    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('dayExcludes')||'null');if(s&&s.date===new Date().toDateString()&&Array.isArray(s.data))return s.data;}catch(e){}}
+    return [{},{},{},{},{},{},{}];
+  })(),
+  sundayCount:(function(){
+    if(isAdmin())return parseInt(localStorage.getItem('sundayCount')||'4',10);
+    return 4;
+  })(),
   history:(function(){try{return JSON.parse(localStorage.getItem('dayHistory')||'[]');}catch(e){return[];}})(),
   settings:{font:"system",size:4,skin:"dark"},
   monStart:localStorage.getItem('monStart')==='true',
@@ -521,7 +525,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v1.0</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v1.1</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
