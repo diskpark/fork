@@ -123,6 +123,15 @@ function setAdmin(v){localStorage.setItem('adminMode',v?'true':'false');}
 // Firebase에서 데이터 불러오기
 function syncFromFirebase(callback){
   fetch(FB_URL+'.json').then(function(r){return r.json();}).then(function(data){
+    if(isAdmin()&&callback){
+      // 관리자 디버그: 받은 데이터 키 확인
+      var keys=data?Object.keys(data):[];
+      var msg='Firebase 수신 키: '+keys.join(', ')+'\n';
+      if(data&&data.carDays)msg+='carDays: '+JSON.stringify(data.carDays).slice(0,80)+'\n';
+      if(data&&data.dayExcludes)msg+='dayExcludes: '+JSON.stringify(data.dayExcludes).slice(0,80)+'\n';
+      if(data&&data.firstWorker)msg+='firstWorker: '+data.firstWorker+'\n';
+      alert(msg);
+    }
     if(data){
       if(data.carDays){
         var cd=data.carDays;
