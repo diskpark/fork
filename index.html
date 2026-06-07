@@ -494,7 +494,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v1.7</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v1.8</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -593,7 +593,11 @@ function render(){
 
   var vb=h("div",{className:"vac-btn-wrap"});
   var tbtn=h("div",{className:"vac-btn",style:"background:#4a9eff22;border-color:#4a9eff44;color:#4a9eff"},"🌊 물때");
-  tbtn.onclick=function(){window.open('https://www.badatime.com/105.html','_blank');};
+  tbtn.onclick=function(){
+    var t=new Date();
+    var ds=t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate());
+    window.open('https://m.badatime.com/view.jsp?idx=105&date='+ds,'_blank');
+  };
   vb.appendChild(tbtn);
   var sbtn=h("div",{className:"vac-btn",style:"background:#88eeff22;border-color:#88eeff44;color:#88eeff"},"🚢 성우제주호");
   sbtn.onclick=function(){window.open('http://1.diskpark.me/team/vessel.html','_blank');};
