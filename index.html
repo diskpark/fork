@@ -124,13 +124,24 @@ function setAdmin(v){localStorage.setItem('adminMode',v?'true':'false');}
 function syncFromFirebase(callback){
   fetch(FB_URL+'.json').then(function(r){return r.json();}).then(function(data){
     if(data){
-      if(data.carDays&&Array.isArray(data.carDays))state.carDays=data.carDays;
+      if(data.carDays&&Array.isArray(data.carDays)){
+        state.carDays=data.carDays;
+        localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:data.carDays}));
+      }
       if(data.absentWorkers&&Array.isArray(data.absentWorkers))state.absentWorkers=data.absentWorkers;
-      if(data.dayExcludes&&Array.isArray(data.dayExcludes))state.dayExcludes=data.dayExcludes;
-      if(typeof data.sundayCount==='number')state.sundayCount=data.sundayCount;
-      if(data.firstWorker)state.firstWorker=data.firstWorker;
+      if(data.dayExcludes&&Array.isArray(data.dayExcludes)){
+        state.dayExcludes=data.dayExcludes;
+        localStorage.setItem('dayExcludes',JSON.stringify({date:new Date().toDateString(),data:data.dayExcludes}));
+      }
+      if(typeof data.sundayCount==='number'){
+        state.sundayCount=data.sundayCount;
+        localStorage.setItem('sundayCount',data.sundayCount);
+      }
+      if(data.firstWorker){
+        state.firstWorker=data.firstWorker;
+        localStorage.setItem('firstWorker',JSON.stringify({date:new Date().toDateString(),name:data.firstWorker}));
+      }
     }
-    // 다음날 대양1번 자동 계산
     autoSetFirstWorker();
     render();
     if(callback)callback();
@@ -461,10 +472,26 @@ function render(){
     var v=!state.monStart;
     localStorage.setItem('monStart',String(v));
     var newWk=getWeekDays(v);
+    var off=getStartOffset(v); // 실제 오늘 기준 offset (일요일이면 1, 아니면 0)
     var newDays=state.carDays.slice();
-    for(var i=0;i<7;i++){if(newWk[i]==="일"&&newDays[i]===null)newDays[i]=false;}
+    var newExcl=state.dayExcludes.slice();
+    if(off!==0){
+      // 월 시작 ON: 인덱스 0(오늘=일) 건너뛰고 1~6이 새 0~5, 6번은 빈값
+      if(v){
+        newDays=[state.carDays[1],state.carDays[2],state.carDays[3],state.carDays[4],state.carDays[5],state.carDays[6],false];
+        newExcl=[state.dayExcludes[1],state.dayExcludes[2],state.dayExcludes[3],state.dayExcludes[4],state.dayExcludes[5],state.dayExcludes[6],{}];
+      } else {
+        // 월 시작 OFF: 다시 오늘(일)부터, 앞에 null 추가
+        newDays=[false,state.carDays[0],state.carDays[1],state.carDays[2],state.carDays[3],state.carDays[4],state.carDays[5]];
+        newExcl=[{},state.dayExcludes[0],state.dayExcludes[1],state.dayExcludes[2],state.dayExcludes[3],state.dayExcludes[4],state.dayExcludes[5]];
+      }
+    }
+    // 일요일 칸 차없음 고정
+    for(var i=0;i<7;i++){if(newWk[i]==="일")newDays[i]=false;}
     localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:newDays}));
-    setState({monStart:v,weekDates:getWeekDates(v),weekDays:newWk,weekDateObjs:getWeekDateObjs(v),carDays:newDays});
+    localStorage.setItem('dayExcludes',JSON.stringify({date:new Date().toDateString(),data:newExcl}));
+    if(isAdmin()){saveCarDays(newDays);saveDayExcludes(newExcl);}
+    setState({monStart:v,weekDates:getWeekDates(v),weekDays:newWk,weekDateObjs:getWeekDateObjs(v),carDays:newDays,dayExcludes:newExcl});
   };
   topBtnGroup.appendChild(monStartBtn);
   app.appendChild(topBtnGroup);
