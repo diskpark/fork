@@ -79,7 +79,7 @@ td.site-td{padding:8px;font-weight:700;font-size:11px;background:#13132a;positio
 .et.jad{color:#88cc88}
 .lock-btn{position:fixed;top:12px;right:52px;z-index:160;width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:1px solid #ffffff22;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
 .lock-btn.admin{border-color:#ffd93d;color:#ffd93d;background:#ffd93d11}
-.top-btn-group{position:fixed;top:12px;left:12px;z-index:150;display:flex;gap:6px;align-items:center;max-width:calc(100% - 100px)}
+.top-btn-group{position:fixed;top:12px;left:12px;z-index:150;display:flex;flex-direction:column;gap:5px;align-items:flex-start}
 .sync-btn{padding:7px 12px;border-radius:16px;background:#4a9eff22;border:1px solid #4a9eff44;color:#4a9eff;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
 .sync-btn.syncing{opacity:0.6}
 .test-btn{padding:7px 12px;border-radius:16px;background:#ff9f7f22;border:1px solid #ff9f7f44;color:#ff9f7f;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
@@ -124,14 +124,31 @@ function setAdmin(v){localStorage.setItem('adminMode',v?'true':'false');}
 function syncFromFirebase(callback){
   fetch(FB_URL+'.json').then(function(r){return r.json();}).then(function(data){
     if(data){
-      if(data.carDays&&Array.isArray(data.carDays)){
-        state.carDays=data.carDays;
-        localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:data.carDays}));
+      if(data.carDays){
+        var cd=data.carDays;
+        if(!Array.isArray(cd)){
+          cd=[null,null,null,null,null,null,null];
+          Object.keys(data.carDays).forEach(function(k){
+            var i=parseInt(k);
+            if(i>=0&&i<7)cd[i]=data.carDays[k];
+          });
+        }
+        state.carDays=cd;
+        localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:cd}));
       }
       if(data.absentWorkers&&Array.isArray(data.absentWorkers))state.absentWorkers=data.absentWorkers;
-      if(data.dayExcludes&&Array.isArray(data.dayExcludes)){
-        state.dayExcludes=data.dayExcludes;
-        localStorage.setItem('dayExcludes',JSON.stringify({date:new Date().toDateString(),data:data.dayExcludes}));
+      if(data.dayExcludes){
+        var de=data.dayExcludes;
+        if(!Array.isArray(de)){
+          // Firebase가 배열을 객체로 변환한 경우 복원
+          de=[{},{},{},{},{},{},{}];
+          Object.keys(data.dayExcludes).forEach(function(k){
+            var i=parseInt(k);
+            if(i>=0&&i<7&&data.dayExcludes[k])de[i]=data.dayExcludes[k];
+          });
+        }
+        state.dayExcludes=de;
+        localStorage.setItem('dayExcludes',JSON.stringify({date:new Date().toDateString(),data:de}));
       }
       if(typeof data.sundayCount==='number'){
         state.sundayCount=data.sundayCount;
@@ -504,7 +521,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v7.3</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v1.0</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
