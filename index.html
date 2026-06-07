@@ -77,9 +77,9 @@ td.site-td{padding:8px;font-weight:700;font-size:11px;background:#13132a;positio
 .et.vacation{color:#ffd93d}
 .et.seaworld{color:#88eeff}
 .et.jad{color:#88cc88}
-.lock-btn{position:fixed;top:12px;right:52px;z-index:160;width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:1px solid #ffffff22;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
+.lock-btn{position:fixed;top:12px;right:52px;z-index:200;width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:1px solid #ffffff22;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
 .lock-btn.admin{border-color:#ffd93d;color:#ffd93d;background:#ffd93d11}
-.top-btn-group{position:fixed;top:12px;left:12px;z-index:150;display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.top-btn-group{position:fixed;top:12px;left:12px;z-index:150;display:flex;flex-direction:column;gap:6px;align-items:flex-start;max-width:120px}
 .sync-btn{padding:7px 12px;border-radius:16px;background:#4a9eff22;border:1px solid #4a9eff44;color:#4a9eff;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
 .sync-btn.syncing{opacity:0.6}
 .test-btn{padding:7px 12px;border-radius:16px;background:#ff9f7f22;border:1px solid #ff9f7f44;color:#ff9f7f;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
@@ -123,41 +123,15 @@ function setAdmin(v){localStorage.setItem('adminMode',v?'true':'false');}
 // Firebase에서 데이터 불러오기
 function syncFromFirebase(callback){
   fetch(FB_URL+'.json').then(function(r){return r.json();}).then(function(data){
-    if(isAdmin()&&callback){
-      // 관리자 디버그: 받은 데이터 키 확인
-      var keys=data?Object.keys(data):[];
-      var msg='Firebase 수신 키: '+keys.join(', ')+'\n';
-      if(data&&data.carDays)msg+='carDays: '+JSON.stringify(data.carDays).slice(0,80)+'\n';
-      if(data&&data.dayExcludes)msg+='dayExcludes: '+JSON.stringify(data.dayExcludes).slice(0,80)+'\n';
-      if(data&&data.firstWorker)msg+='firstWorker: '+data.firstWorker+'\n';
-      alert(msg);
-    }
     if(data){
       if(data.carDays){
-        var cd=data.carDays;
-        if(!Array.isArray(cd)){
-          cd=[null,null,null,null,null,null,null];
-          Object.keys(data.carDays).forEach(function(k){
-            var i=parseInt(k);
-            if(i>=0&&i<7)cd[i]=data.carDays[k];
-          });
-        }
-        state.carDays=cd;
-        localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:cd}));
+        state.carDays=data.carDays; // 날짜키 객체 그대로
+        localStorage.setItem('carPlan',JSON.stringify(data.carDays));
       }
       if(data.absentWorkers&&Array.isArray(data.absentWorkers))state.absentWorkers=data.absentWorkers;
       if(data.dayExcludes){
-        var de=data.dayExcludes;
-        if(!Array.isArray(de)){
-          // Firebase가 배열을 객체로 변환한 경우 복원
-          de=[{},{},{},{},{},{},{}];
-          Object.keys(data.dayExcludes).forEach(function(k){
-            var i=parseInt(k);
-            if(i>=0&&i<7&&data.dayExcludes[k])de[i]=data.dayExcludes[k];
-          });
-        }
-        state.dayExcludes=de;
-        localStorage.setItem('dayExcludes',JSON.stringify({date:new Date().toDateString(),data:de}));
+        state.dayExcludes=data.dayExcludes; // 날짜키 객체 그대로
+        localStorage.setItem('dayExcludes',JSON.stringify(data.dayExcludes));
       }
       if(typeof data.sundayCount==='number'){
         state.sundayCount=data.sundayCount;
@@ -209,9 +183,9 @@ function autoSetFirstWorker(){
 }
 
 // Firebase에 저장 (관리자만)
-function saveCarDays(days){
+function saveCarDays(map){
   if(!isAdmin())return;
-  fetch(FB_URL+'/carDays.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(days)});
+  fetch(FB_URL+'/carDays.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(map)});
 }
 function saveSundayCount(cnt){
   if(!isAdmin())return;
@@ -225,9 +199,9 @@ function saveAbsentWorkers(workers){
   if(!isAdmin())return;
   fetch(FB_URL+'/absentWorkers.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(workers)});
 }
-function saveDayExcludes(data){
+function saveDayExcludes(map){
   if(!isAdmin())return;
-  fetch(FB_URL+'/dayExcludes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  fetch(FB_URL+'/dayExcludes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(map)});
 }
 
 // 실시간 리스너 (30초마다 폴링)
@@ -399,10 +373,8 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
 
 var state={
   carDays:(function(){
-    // 관리자는 로컬 캐시 사용, 일반 사용자는 Firebase 동기화 후 덮어쓰므로 기본값만
-    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('carPlan')||'null');if(s&&s.date===new Date().toDateString()&&Array.isArray(s.days))return s.days;}catch(e){}}
-    var mon=localStorage.getItem('monStart')==='true';
-    var days=[null,null,null,null,null,null,null];var wk=getWeekDays(mon);for(var i=0;i<wk.length;i++){if(wk[i]==="일")days[i]=false;}return days;
+    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('carPlan')||'null');if(s&&typeof s==='object'&&!Array.isArray(s))return s;}catch(e){}}
+    return {};
   })(),
   firstWorker:(function(){
     if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('firstWorker')||'null');if(s&&s.date===new Date().toDateString())return s.name||'';}catch(e){}}
@@ -414,8 +386,8 @@ var state={
   vesselPopup:false,
   vesselData:null,
   dayExcludes:(function(){
-    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('dayExcludes')||'null');if(s&&s.date===new Date().toDateString()&&Array.isArray(s.data))return s.data;}catch(e){}}
-    return [{},{},{},{},{},{},{}];
+    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('dayExcludes')||'null');if(s&&typeof s==='object'&&!Array.isArray(s))return s;}catch(e){}}
+    return {};
   })(),
   sundayCount:(function(){
     if(isAdmin())return parseInt(localStorage.getItem('sundayCount')||'4',10);
@@ -451,9 +423,17 @@ function applySettings(s){
 
 function render(){
   applySettings(state.settings);
-  var wd=state.weekDates,wk=state.weekDays,cd=state.carDays;
-  var dayExcl=state.dayExcludes;
-  if(!Array.isArray(dayExcl)||dayExcl.length!==7){dayExcl=[{},{},{},{},{},{},{}];state.dayExcludes=dayExcl;}
+  var wd=state.weekDates,wk=state.weekDays;
+  var dateObjs=state.weekDateObjs;
+  var cd=dateObjs.map(function(d,i){
+    var k=dateKey(d);
+    if(wk[i]==="일")return false;
+    var v=state.carDays[k];
+    return(v===true||v===false)?v:null;
+  });
+  var dayExcl=dateObjs.map(function(d){
+    return state.dayExcludes[dateKey(d)]||{};
+  });
   var sc=state.sundayCount;
   var autoVac=getAutoVac(state.weekDateObjs);
   var merged=dayExcl.map(function(m,i){var r=Object.assign({},autoVac[i]);if(m&&typeof m==='object')Object.keys(m).forEach(function(k){r[k]=m[k];});return r;});
@@ -470,21 +450,8 @@ function render(){
     adminLabel.id='adminLabel';
     app.appendChild(adminLabel);
   }
-  var lockBtn=h("div",{className:"lock-btn"+(isAdmin()?" admin":"")},isAdmin()?"🔓":"🔒");
-  lockBtn.onclick=function(){
-    if(isAdmin()){
-      if(confirm("관리자 모드를 해제할까요?")){setAdmin(false);render();}
-    } else {
-      var pw=prompt("관리자 비밀번호를 입력하세요");
-      if(pw==="100410004"){setAdmin(true);alert("관리자 모드 활성화!");render();}
-      else if(pw!==null){alert("비밀번호가 틀렸습니다.");}
-    }
-  };
-  app.appendChild(lockBtn);
-
-  // 상단 왼쪽 버튼 그룹 (동기화 + 테스트)
+  // 상단 왼쪽 버튼 그룹 (동기화 + 월시작) - 먼저 추가
   var topBtnGroup=h("div",{className:"top-btn-group"});
-
   var syncBtn=h("div",{className:"sync-btn"},"🔄 동기화");
   syncBtn.onclick=function(){
     syncBtn.className="sync-btn syncing";
@@ -496,45 +463,38 @@ function render(){
     });
   };
   topBtnGroup.appendChild(syncBtn);
-
   var monStartBtn=h("div",{className:"sync-btn"+(state.monStart?" active":""),style:"background:"+(state.monStart?"#ffd93d22":"#4a9eff22")+";border-color:"+(state.monStart?"#ffd93d44":"#4a9eff44")+";color:"+(state.monStart?"#ffd93d":"#4a9eff")},state.monStart?"🗓월 ✓":"🗓월");
   monStartBtn.onclick=function(){
     var v=!state.monStart;
     localStorage.setItem('monStart',String(v));
     var newWk=getWeekDays(v);
-    var off=getStartOffset(v); // 실제 오늘 기준 offset (일요일이면 1, 아니면 0)
-    var newDays=state.carDays.slice();
-    var newExcl=state.dayExcludes.slice();
-    if(off!==0){
-      // 월 시작 ON: 인덱스 0(오늘=일) 건너뛰고 1~6이 새 0~5, 6번은 빈값
-      if(v){
-        newDays=[state.carDays[1],state.carDays[2],state.carDays[3],state.carDays[4],state.carDays[5],state.carDays[6],false];
-        newExcl=[state.dayExcludes[1],state.dayExcludes[2],state.dayExcludes[3],state.dayExcludes[4],state.dayExcludes[5],state.dayExcludes[6],{}];
-      } else {
-        // 월 시작 OFF: 다시 오늘(일)부터, 앞에 null 추가
-        newDays=[false,state.carDays[0],state.carDays[1],state.carDays[2],state.carDays[3],state.carDays[4],state.carDays[5]];
-        newExcl=[{},state.dayExcludes[0],state.dayExcludes[1],state.dayExcludes[2],state.dayExcludes[3],state.dayExcludes[4],state.dayExcludes[5]];
-      }
-    }
-    // 일요일 칸 차없음 고정
-    for(var i=0;i<7;i++){if(newWk[i]==="일")newDays[i]=false;}
-    localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:newDays}));
-    localStorage.setItem('dayExcludes',JSON.stringify({date:new Date().toDateString(),data:newExcl}));
-    if(isAdmin()){saveCarDays(newDays);saveDayExcludes(newExcl);}
-    setState({monStart:v,weekDates:getWeekDates(v),weekDays:newWk,weekDateObjs:getWeekDateObjs(v),carDays:newDays,dayExcludes:newExcl});
+    setState({monStart:v,weekDates:getWeekDates(v),weekDays:newWk,weekDateObjs:getWeekDateObjs(v)});
   };
   topBtnGroup.appendChild(monStartBtn);
   app.appendChild(topBtnGroup);
 
+  // 설정/자물쇠 버튼 - topBtnGroup 이후에 추가해야 DOM상 위에 렌더링
   var settBtn=h("div",{className:"settings-btn"},"⚙️");
   settBtn.onclick=function(){setState({settingsOpen:true});};
   app.appendChild(settBtn);
+
+  var lockBtn=h("div",{className:"lock-btn"+(isAdmin()?" admin":"")},isAdmin()?"🔓":"🔒");
+  lockBtn.onclick=function(){
+    if(isAdmin()){
+      if(confirm("관리자 모드를 해제할까요?")){setAdmin(false);syncFromFirebase(null);}
+    } else {
+      var pw=prompt("관리자 비밀번호를 입력하세요");
+      if(pw==="100410004"){setAdmin(true);alert("관리자 모드 활성화!");render();}
+      else if(pw!==null){alert("비밀번호가 틀렸습니다.");}
+    }
+  };
+  app.appendChild(lockBtn);
 
   var hdr=h("div",{className:"header"});
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v1.1</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v1.7</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -1192,27 +1152,30 @@ function renderVesselPopup(){
   return bg;
 }
 
+function dateKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function toggleCar(idx,val){
   if(state.weekDays[idx]==="일")return;
-  var c=state.carDays.slice();c[idx]=c[idx]===val?null:val;
-  localStorage.setItem('carPlan',JSON.stringify({date:new Date().toDateString(),days:c}));
-  if(isAdmin())saveCarDays(c);
-  setState({carDays:c});
+  var k=dateKey(state.weekDateObjs[idx]);
+  var cur=state.carDays[k];
+  var map=Object.assign({},state.carDays);
+  map[k]=(cur===val)?null:val;
+  localStorage.setItem('carPlan',JSON.stringify(map));
+  if(isAdmin())saveCarDays(map);
+  setState({carDays:map});
 }
 function toggleExcl(idx,name){
-  var d=state.dayExcludes.map(function(e,i){
-    if(i!==idx)return e;
-    var u=Object.assign({},e);
-    var cur=u[name];
-    if(!cur)u[name]="결근";
-    else if(cur==="결근")u[name]="씨월드";
-    else if(cur==="씨월드")u[name]="자동차";
-    else delete u[name];
-    return u;
-  });
-  localStorage.setItem('dayExcludes',JSON.stringify({date:new Date().toDateString(),data:d}));
-  saveDayExcludes(d);
-  setState({dayExcludes:d});
+  var k=dateKey(state.weekDateObjs[idx]);
+  var map=Object.assign({},state.dayExcludes);
+  var dayMap=Object.assign({},map[k]||{});
+  var cur=dayMap[name];
+  if(!cur)dayMap[name]="결근";
+  else if(cur==="결근")dayMap[name]="씨월드";
+  else if(cur==="씨월드")dayMap[name]="자동차";
+  else delete dayMap[name];
+  map[k]=dayMap;
+  localStorage.setItem('dayExcludes',JSON.stringify(map));
+  saveDayExcludes(map);
+  setState({dayExcludes:map});
 }
 
 // 앱 시작 - Firebase 동기화 후 렌더
