@@ -259,21 +259,48 @@ function getWeekDates(monStart){var off=getStartOffset(monStart),t=new Date(),r=
 function getWeekDays(monStart){var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<7;i++){var d=new Date(t);d.setDate(t.getDate()+off+i);r.push(KR[d.getDay()]);}return r;}
 function getWeekDateObjs(monStart){var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<7;i++){var d=new Date(t);d.setDate(t.getDate()+off+i);d.setHours(0,0,0,0);r.push(d);}return r;}
 function pad(n){return n<10?"0"+n:""+n;}
+function dateKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function fmtToday(){var t=new Date();return t.getFullYear()+"."+pad(t.getMonth()+1)+"."+pad(t.getDate());}
 function fmtVacDate(s){var d=new Date(s+"T00:00:00");return(d.getMonth()+1)+"/"+d.getDate()+"("+KR[d.getDay()]+")";}
 function toNum(name){return WORKERS.indexOf(name)+1;}
 
 function getAutoVac(dateObjs){
   var r=[];for(var i=0;i<7;i++){r.push({});}
+  // 씨월드 땜빵: dayExcludes에서 씨월드로 지정된 인원 찾기
+  var swSubs={};
+  dateObjs.forEach(function(cur){
+    var k=dateKey(cur);
+    var exclMap=state.dayExcludes[k]||{};
+    Object.keys(exclMap).forEach(function(name){
+      if(exclMap[name]==="씨월드"&&!swSubs[name]){
+        // 씨월드 스케줄 중 지정날짜와 가장 가까운(또는 포함하는) 스케줄 찾기
+        var best=null,bestDiff=Infinity;
+        SEAWORLD_SCHEDULE.forEach(function(v){
+          var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");
+          if(cur>=s&&cur<=e){best=v;bestDiff=0;}// 기간 안
+          else if(bestDiff>0){
+            var diff=Math.min(Math.abs(cur-s),Math.abs(cur-e));
+            if(diff<bestDiff){bestDiff=diff;best=v;}
+          }
+        });
+        if(best)swSubs[name]=best;
+      }
+    });
+  });
   dateObjs.forEach(function(cur,idx){
     VACATION_SCHEDULE.forEach(function(v){var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");if(cur>=s&&cur<=e)r[idx][v.name]="휴가";});
     SEAWORLD_SCHEDULE.forEach(function(v){var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");if(cur>=s&&cur<=e)r[idx][v.name]="씨월드";});
+    Object.keys(swSubs).forEach(function(name){
+      var v=swSubs[name];
+      var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");
+      if(cur>=s&&cur<=e)r[idx][name]="씨월드";
+    });
   });
   return r;
 }
 
-function pickFwd(count,startIdx,excl){var team=[],cur=((startIdx%N)+N)%N;while(team.length<count){var name=WORKERS[cur];cur=(cur+1)%N;if(excl.indexOf(name)<0)team.push(name);}return{team:team,next:cur};}
-function pickRev(count,fromIdx,excl){var team=[],cur=((fromIdx%N)+N)%N;while(team.length<count){var name=WORKERS[cur];if(excl.indexOf(name)<0)team.push(name);cur=((cur-1)+N)%N;}return{team:team.reverse(),next:cur};}
+function pickFwd(count,startIdx,excl){var team=[],cur=((startIdx%N)+N)%N,safe=0;while(team.length<count&&safe<N*2){var name=WORKERS[cur];cur=(cur+1)%N;safe++;if(excl.indexOf(name)<0&&team.indexOf(name)<0)team.push(name);}return{team:team,next:cur};}
+function pickRev(count,fromIdx,excl){var team=[],cur=((fromIdx%N)+N)%N,safe=0;while(team.length<count&&safe<N*2){var name=WORKERS[cur];safe++;if(excl.indexOf(name)<0&&team.indexOf(name)<0)team.push(name);cur=((cur-1)+N)%N;}return{team:team.reverse(),next:cur};}
 function insertOrder(arr,name){var idx=WORKERS.indexOf(name),ip=arr.length;for(var i=0;i<arr.length;i++){if(WORKERS.indexOf(arr[i])>idx){ip=i;break;}}arr.splice(ip,0,name);}
 
 function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
@@ -296,6 +323,12 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
     // 자동차(jadForced)는 이미 exclAll에서 제외됨 → 자동차 지정자는 비번 없음
     // 오늘 결근/씨월드인 사람만 비번에서 제외
     var bib=prevDae.filter(function(w){return exclAll.indexOf(w)<0;});
+    // 비번 6명 미달 시 전날 성우 순번으로 보충
+    if(bib.length<6&&prevSun.length>0){
+      var sunFill=prevSun.filter(function(w){return exclAll.indexOf(w)<0&&bib.indexOf(w)<0;});
+      var need=6-bib.length;
+      for(var si=0;si<sunFill.length&&bib.length<6;si++)bib.push(sunFill[si]);
+    }
     var prevExclMap=d>0?(dayExcl[d-1]||{}):{};
     var absRet=Object.keys(prevExclMap).filter(function(w){return prevExclMap[w]==="결근"&&exclAll.indexOf(w)<0;});
     var vacRet=Object.keys(prevExclMap).filter(function(w){return prevExclMap[w]==="휴가"&&exclAll.indexOf(w)<0;});
@@ -311,7 +344,11 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
         cursor=r4.next;
       } else {
         dae=prevSun.concat(prevYac.slice(0,2)).filter(function(w){return exclWithBib.indexOf(w)<0;});
+        // dae 6명 미달 시 cursor부터 pickFwd로 보충
+        if(dae.length<6){var rFill=pickFwd(6-dae.length,cursor,exclWithBib.concat(dae));dae=dae.concat(rFill.team);cursor=rFill.next;}
         sun=prevYac.slice(2,6).filter(function(w){return exclWithBib.indexOf(w)<0;});
+        // sun 4명 미달 시 cursor부터 보충
+        if(sun.length<4){var rFill2=pickFwd(4-sun.length,cursor,exclWithBib.concat(dae).concat(sun));sun=sun.concat(rFill2.team);cursor=rFill2.next;}
         var pj=result[d-1].jay.filter(function(w){return exclWithBib.indexOf(w)<0;});
         var r1=pickFwd(6-pj.length,cursor,exclWithBib);yac=pj.concat(r1.team);cursor=r1.next;
         var r2=pickFwd(4,cursor,exclWithBib);jay=r2.team;cursor=r2.next;
@@ -363,8 +400,11 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
           var dae=rD.team,sun=rS.team,jay=rJ.team;
         } else {
           // 차없음 연속: 전날 제이 말번부터 역순 (제이→성우→대양)
-          var li=WORKERS.indexOf(prevDae[0]);
-          var rJ=pickRev(4,( li-1+N)%N,exclWithBib),rS=pickRev(4,rJ.next,exclWithBib),rD=pickRev(6,rS.next,exclWithBib);
+          var prevJay=result[d-1].jay||[];
+          var liStart=prevJay.length>0?WORKERS.indexOf(prevJay[prevJay.length-1]):(WORKERS.indexOf(prevDae[0])-1+N)%N;
+          var rJ=pickRev(4,liStart,exclWithBib);
+          var rS=pickRev(4,rJ.next,exclWithBib);
+          var rD=pickRev(6,rS.next,exclWithBib);
           var jay=rJ.team,sun=rS.team,dae=rD.team;
         }
         absRet.forEach(function(ret){
@@ -505,7 +545,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v2.3</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v3.5</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -566,11 +606,17 @@ function render(){
   var allVacList=[],allAbsList=[],allSwList=[],allJadList=[];
   merged.forEach(function(exclMap,i){
     var dayLabel=wk[i];
+    var dateObj=dateObjs[i];
     Object.keys(exclMap).forEach(function(name){
       var t=exclMap[name];
       if(t==="휴가")allVacList.push(name+"("+dayLabel+")");
       else if(t==="결근")allAbsList.push(name+"("+dayLabel+")");
-      else if(t==="씨월드")allSwList.push(name+"("+dayLabel+")");
+      else if(t==="씨월드"){
+        // 원래 씨월드 스케줄 인원이면 휴가, 땜빵이면 씨월드
+        var isOrig=SEAWORLD_SCHEDULE.some(function(v){return v.name===name&&dateObj>=new Date(v.start+"T00:00:00")&&dateObj<=new Date(v.end+"T00:00:00");});
+        if(isOrig)allVacList.push(name+"("+dayLabel+")");
+        else allSwList.push(name+"("+dayLabel+")");
+      }
       else if(t==="자동차")allJadList.push(name+"("+dayLabel+")");
     });
   });
@@ -679,7 +725,7 @@ function render(){
   cont.appendChild(d1Card);
 
   if(!sched){cont.appendChild(h("div",{className:"hint"},allSel?"👆 오늘 대양 1번을 선택해주세요":"📅 모든 날 차 유무를 선택해주세요"));}
-  if(sched&&state.myName){cont.appendChild(renderMySchedule(sched,wk,wd));}
+  if(sched&&state.myName){cont.appendChild(renderMySchedule(sched,wk,wd,dateObjs));}
   if(sched){cont.appendChild(renderTable(sched,wk,wd,cd,merged));}
   app.appendChild(cont);
 
@@ -776,7 +822,7 @@ function renderTable(sched,wk,wd,cd,merged){
   return wrap;
 }
 
-function renderMySchedule(sched,wk,wd){
+function renderMySchedule(sched,wk,wd,dateObjs){
   var name=state.myName;
   var card=h("div",{className:"my-card"});
   card.appendChild(h("div",{className:"my-title"},"▪ "+name+" · 내 주간 근무"));
@@ -789,12 +835,18 @@ function renderMySchedule(sched,wk,wd){
       if((day.sunw||[]).indexOf(name)>=0){pos=(day.sunw||[]).indexOf(name)+1;site="일요근무("+pos+"번)";color="#ffd93d";}
       else if((day.bib||[]).indexOf(name)>=0){site="비번";color="#cccc55";}
       else if((day.rest||[]).indexOf(name)>=0){site="비번";color="#888";}
-      else site="미배정";
+      else site="휴가";
     } else {
       var NOPOS=["jad","rest","bib"];
       var keys=["dae","sun","yac","jay","jad","bib","rest"];
       for(var ki=0;ki<keys.length;ki++){var k=keys[ki],arr=day[k]||[];if(arr.indexOf(name)>=0){pos=arr.indexOf(name)+1;site=NOPOS.indexOf(k)>=0?LABELS[k]:LABELS[k]+"("+pos+"번)";color=COLORS[k];break;}}
-      if(!site)site="미배정";
+      if(!site){
+        // 원래 씨월드 휴가자 vs 땜빵 구분
+        var isOrigSw=SEAWORLD_SCHEDULE.some(function(v){return v.name===name&&dateObjs[idx]>=new Date(v.start+"T00:00:00")&&dateObjs[idx]<=new Date(v.end+"T00:00:00");});
+        var isOrigVac=VACATION_SCHEDULE.some(function(v){return v.name===name&&dateObjs[idx]>=new Date(v.start+"T00:00:00")&&dateObjs[idx]<=new Date(v.end+"T00:00:00");});
+        if(isOrigSw||isOrigVac){site="휴가";color="#ffd93d";}
+        else{site="씨월드 근무";color="#88eeff";}
+      }
     }
     var isWe=wk[idx]==="토"||wk[idx]==="일";
     var item=h("div",{className:"my-item"});
@@ -863,7 +915,7 @@ function makeTodayText(sched,wk,wd,merged){
     line+=formatNames("성우",today.sun);
     line+=formatNames("오선",today.jay);
   }
-  if(swNames.length>0)line+=formatNames("씨월드",swNames);
+  if(swNames.length>0)line+=formatNames("휴가",swNames);
   if(vacNames.length>0)line+=formatNames("휴가",vacNames);
   if(absNames.length>0)line+=formatNames("결근",absNames);
   return line.trim();
@@ -951,7 +1003,7 @@ function renderVacPopup(){
     row.style.cssText="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff08";
     var nameEl=document.createElement("div");
     nameEl.style.cssText="min-width:80px;font-size:13px;font-weight:700;color:"+color;
-    nameEl.textContent=v.name+(v.isSeaworld?" (씨월드)":"");
+    nameEl.textContent=v.name;
     if(isActive){var badge=document.createElement("span");badge.style.cssText="font-size:9px;background:"+(v.isSeaworld?"#88eeff33":"#ffd93d33")+";color:"+(v.isSeaworld?"#88eeff":"#ffd93d")+";border-radius:4px;padding:1px 5px;margin-left:6px";badge.textContent="휴가중";nameEl.appendChild(badge);}
     var dateEl=document.createElement("div");
     dateEl.style.cssText="font-size:11px;color:"+(isPast?"#444":"#888")+";margin-left:8px";
@@ -1167,7 +1219,6 @@ function renderVesselPopup(){
   return bg;
 }
 
-function dateKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function toggleCar(idx,val){
   if(state.weekDays[idx]==="일")return;
   var k=dateKey(state.weekDateObjs[idx]);
