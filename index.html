@@ -336,20 +336,25 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
       result.push({hasCar:true,dae:dae,sun:sun,yac:yac,jay:jay,jad:jad,bib:bib,rest:[],excl:exclMap});
       prevDae=dae;prevSun=sun;prevYac=yac;prevActBib=bib;
     } else {
-      if(sundayCount>0&&weekDays&&weekDays[d]==="일"){
-        var li;
-        if(prevCar===false){li=(WORKERS.indexOf(prevDae[0])-1+N)%N;}
-        else{li=WORKERS.indexOf(prevActBib[prevActBib.length-1]);}
-        var sw=pickRev(sundayCount,li,exclWithBib).team;
+      // 차없음 또는 일요일
+      var isSunday=weekDays&&weekDays[d]==="일";
+      if(isSunday&&sundayCount>0){
+        // 일요일 근무: 비번 다음 순번부터 sundayCount명
+        var li=(WORKERS.indexOf(bib.length>0?bib[bib.length-1]:prevDae[prevDae.length-1])+1)%N;
+        var sw=pickFwd(sundayCount,li,exclWithBib).team;
         var rest=avail.filter(function(w){return sw.indexOf(w)<0&&bib.indexOf(w)<0;});
-        result.push({hasCar:false,dae:[],sun:[],yac:[],jay:[],jad:[],sunw:sw,bib:bib,rest:rest,excl:exclMap,isSun:true});
+        result.push({hasCar:false,dae:[],sun:[],yac:[],jay:[],jad:jadForced,sunw:sw,bib:bib,rest:rest,excl:exclMap,isSun:true});
         var bibForNext=sw.slice();
-        if(bibForNext.length>6){cursor=WORKERS.indexOf(bibForNext[bibForNext.length-1]);bibForNext=bibForNext.slice(0,6);}
-        else if(bibForNext.length<6){var lastIdx=WORKERS.indexOf(bibForNext[bibForNext.length-1]),need=6-bibForNext.length,cur2=(lastIdx+1)%N;for(var ni=0;ni<need;ni++){while(exclAll.indexOf(WORKERS[cur2])>=0)cur2=(cur2+1)%N;bibForNext.push(WORKERS[cur2]);cur2=(cur2+1)%N;}cursor=cur2;}
-        else{cursor=(WORKERS.indexOf(bibForNext[bibForNext.length-1])+1)%N;}
-        prevDae=bibForNext;
-        var restAll=WORKERS.filter(function(w){return sw.indexOf(w)<0&&exclAll.indexOf(w)<0;});
-        prevActBib=restAll;prevSun=[];prevYac=[];
+        if(bibForNext.length>6){bibForNext=bibForNext.slice(0,6);}
+        else if(bibForNext.length<6){
+          var cur2=(WORKERS.indexOf(bibForNext[bibForNext.length-1])+1)%N;
+          while(bibForNext.length<6){
+            if(exclAll.indexOf(WORKERS[cur2])<0&&bibForNext.indexOf(WORKERS[cur2])<0)bibForNext.push(WORKERS[cur2]);
+            cur2=(cur2+1)%N;
+          }
+        }
+        cursor=(WORKERS.indexOf(bibForNext[bibForNext.length-1])+1)%N;
+        prevDae=bibForNext;prevSun=[];prevYac=[];prevActBib=sw;
       } else {
         if(d===0||prevCar===null||prevCar===true){
           // 첫날 또는 차있음→차없음 전환: firstWorker(또는 비번 다음)부터 순방향
@@ -500,7 +505,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v2.2</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v2.3</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
