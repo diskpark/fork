@@ -393,15 +393,21 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
         cursor=(WORKERS.indexOf(bibForNext[bibForNext.length-1])+1)%N;
         prevDae=bibForNext;prevSun=[];prevYac=[];prevActBib=sw;
       } else {
-        if(d===0||prevCar===null||prevCar===true){
-          // 첫날 또는 차있음→차없음 전환: firstWorker(또는 비번 다음)부터 순방향
-          var li=( prevCar===true ? (WORKERS.indexOf(prevActBib[prevActBib.length-1])+1)%N : WORKERS.indexOf(firstWorker) );
+        if(d===0||prevCar===null){
+          // 첫날: firstWorker부터 순방향
+          var li=WORKERS.indexOf(firstWorker);
           var rD=pickFwd(6,li,exclWithBib),rS=pickFwd(4,rD.next,exclWithBib),rJ=pickFwd(4,rS.next,exclWithBib);
           var dae=rD.team,sun=rS.team,jay=rJ.team;
+        } else if(prevCar===true){
+          // 차있음→차없음 전환: 전날 비번 말번부터 역순
+          var liStart=WORKERS.indexOf(prevActBib[prevActBib.length-1]);
+          var rJ=pickRev(4,liStart,exclWithBib);
+          var rS=pickRev(4,rJ.next,exclWithBib);
+          var rD=pickRev(6,rS.next,exclWithBib);
+          var jay=rJ.team,sun=rS.team,dae=rD.team;
         } else {
-          // 차없음 연속: 전날 제이 말번부터 역순 (제이→성우→대양)
-          var prevJay=result[d-1].jay||[];
-          var liStart=prevJay.length>0?WORKERS.indexOf(prevJay[prevJay.length-1]):(WORKERS.indexOf(prevDae[0])-1+N)%N;
+          // 차없음 연속: 전날 대양 1번 앞번호 = 제이 말번, 역순으로 제이→성우→대양
+          var liStart=(WORKERS.indexOf(prevDae[0])-1+N)%N;
           var rJ=pickRev(4,liStart,exclWithBib);
           var rS=pickRev(4,rJ.next,exclWithBib);
           var rD=pickRev(6,rS.next,exclWithBib);
@@ -545,7 +551,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v3.5</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v3.7</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
