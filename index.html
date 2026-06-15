@@ -345,14 +345,12 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
       } else {
         dae=prevSun.concat(prevYac.slice(0,2)).filter(function(w){return exclWithBib.indexOf(w)<0;});
         // dae 6명 미달 시 prevYac 나머지에서 순서대로 보충
-        var yacIdx=2;
-        while(dae.length<6&&yacIdx<prevYac.length){
-          var w=prevYac[yacIdx++];
-          if(exclWithBib.indexOf(w)<0&&dae.indexOf(w)<0)dae.push(w);
-        }
+        var yacFill=prevYac.slice(2).filter(function(w){return exclWithBib.indexOf(w)<0&&dae.indexOf(w)<0;});
+        while(dae.length<6&&yacFill.length>0)dae.push(yacFill.shift());
         // 그래도 부족하면 cursor에서 보충
         if(dae.length<6){var rFill=pickFwd(6-dae.length,cursor,exclWithBib.concat(dae));dae=dae.concat(rFill.team);cursor=rFill.next;}
-        sun=prevYac.slice(yacIdx,yacIdx+4).filter(function(w){return exclWithBib.indexOf(w)<0&&dae.indexOf(w)<0;});
+        // sun = prevYac 나머지(dae에 안 쓴 것)에서 4명
+        sun=prevYac.filter(function(w){return exclWithBib.indexOf(w)<0&&dae.indexOf(w)<0;}).slice(0,4);
         if(sun.length<4){var rFill2=pickFwd(4-sun.length,cursor,exclWithBib.concat(dae).concat(sun));sun=sun.concat(rFill2.team);cursor=rFill2.next;}
         var pj=result[d-1].jay.filter(function(w){return exclWithBib.indexOf(w)<0;});
         var r1=pickFwd(6-pj.length,cursor,exclWithBib.concat(dae).concat(sun));yac=pj.concat(r1.team);cursor=r1.next;
