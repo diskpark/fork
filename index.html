@@ -383,21 +383,24 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
       });
       // 휴가 복귀자 순번대로 삽입
       vacRet.forEach(function(ret){
-        var retIdx=WORKERS.indexOf(ret);
-        // 대양 순번 범위인지 확인 후 삽입
+        if(dae.indexOf(ret)>=0||sun.indexOf(ret)>=0||yac.indexOf(ret)>=0||jay.indexOf(ret)>=0)return;
+        // 대양에 순번대로 삽입 후 연쇄 밀림
         insertOrder(dae,ret);
         if(dae.length>6){
-          var pushed=dae.pop();
-          insertOrder(sun,pushed);
+          var p=dae.pop();
+          insertOrder(sun,p);
           if(sun.length>4){
-            var pushed2=sun.pop();
-            insertOrder(yac,pushed2);
+            var p2=sun.pop();
+            insertOrder(yac,p2);
             if(yac.length>6){
-              var pushed3=yac.pop();
-              insertOrder(jay,pushed3);
+              var p3=yac.pop();
+              insertOrder(jay,p3);
               if(jay.length>4){
-                var pushed4=jay.pop();
-                cursor=WORKERS.indexOf(pushed4); // 밀려난 인원부터 다음날 야차 시작
+                var p4=jay.pop();
+                // 제이에서 밀려난 인원을 야차 맨 앞에 삽입
+                yac.unshift(p4);
+                if(yac.length>6)yac.pop();
+                cursor=(WORKERS.indexOf(yac[yac.length-1])+1)%N;
               }
             }
           }
@@ -589,7 +592,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v4.9</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v5.0</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
