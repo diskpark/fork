@@ -410,9 +410,9 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
       // 차없음 또는 일요일
       var isSunday=weekDays&&weekDays[d]==="일";
       if(isSunday&&sundayCount>0){
-        // 일요일 근무: 비번 다음 순번부터 sundayCount명
-        var li=(WORKERS.indexOf(bib.length>0?bib[bib.length-1]:prevDae[prevDae.length-1])+1)%N;
-        var sw=pickFwd(sundayCount,li,exclWithBib).team;
+        // 일요근무: 전날 비번 말번부터 역순 (차있음→차없음 전환과 동일)
+        var li=WORKERS.indexOf(bib[bib.length-1]);
+        var sw=pickRev(sundayCount,li,exclWithBib).team;
         var rest=avail.filter(function(w){return sw.indexOf(w)<0&&bib.indexOf(w)<0;});
         result.push({hasCar:false,dae:[],sun:[],yac:[],jay:[],jad:jadForced,sunw:sw,bib:bib,rest:rest,excl:exclMap,isSun:true});
         var bibForNext=sw.slice();
@@ -585,7 +585,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v5.1</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v5.2</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
