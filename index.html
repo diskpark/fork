@@ -342,21 +342,13 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
     var exclWithBib=exclAll.concat(bib);
     if(hasCar){
       var dae,sun,yac,jay;
-      if(d===0){
-        // 첫날: firstWorker부터 순방향
+      if(d===0||!prevCar){
         var r1=pickFwd(6,cursor,exclWithBib);dae=r1.team;
         var r2=pickFwd(4,r1.next,exclWithBib);sun=r2.team;
         var r3=pickFwd(6,r2.next,exclWithBib);yac=r3.team;
         var r4=pickFwd(4,r3.next,exclWithBib);jay=r4.team;
         cursor=r4.next;
-      } else if(!prevCar){
-        // 차X→차O: 전날 대양 마지막번호 다음부터 순방향
-        var startIdx=(WORKERS.indexOf(prevDae[prevDae.length-1])+1)%N;
-        var r1=pickFwd(6,startIdx,exclWithBib);dae=r1.team;
-        var r2=pickFwd(4,r1.next,exclWithBib);sun=r2.team;
-        var r3=pickFwd(6,r2.next,exclWithBib);yac=r3.team;
-        var r4=pickFwd(4,r3.next,exclWithBib);jay=r4.team;
-        cursor=r4.next;
+      } else {
         dae=prevSun.concat(prevYac.slice(0,2)).filter(function(w){return exclWithBib.indexOf(w)<0;});
         // dae 6명 미달 시 prevYac 나머지에서 순서대로 보충
         var yacUsed=2;
@@ -391,8 +383,8 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
       });
       // 휴가 복귀자 순번대로 삽입
       vacRet.forEach(function(ret){
-        // 이미 배정된 경우 스킵
-        if(dae.indexOf(ret)>=0||sun.indexOf(ret)>=0||yac.indexOf(ret)>=0||jay.indexOf(ret)>=0)return;
+        var retIdx=WORKERS.indexOf(ret);
+        // 대양 순번 범위인지 확인 후 삽입
         insertOrder(dae,ret);
         if(dae.length>6){
           var pushed=dae.pop();
@@ -403,10 +395,7 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
             if(yac.length>6){
               var pushed3=yac.pop();
               insertOrder(jay,pushed3);
-              if(jay.length>4){
-                var pushed4=jay.pop();
-                cursor=WORKERS.indexOf(pushed4);
-              }
+              if(jay.length>4)jay.pop();
             }
           }
         }
@@ -597,7 +586,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v4.8</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v4.7</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
