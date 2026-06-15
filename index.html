@@ -303,7 +303,7 @@ function pickFwd(count,startIdx,excl){var team=[],cur=((startIdx%N)+N)%N,safe=0;
 function pickRev(count,fromIdx,excl){var team=[],cur=((fromIdx%N)+N)%N,safe=0;while(team.length<count&&safe<N*2){var name=WORKERS[cur];safe++;if(excl.indexOf(name)<0&&team.indexOf(name)<0)team.push(name);cur=((cur-1)+N)%N;}return{team:team.reverse(),next:cur};}
 function insertOrder(arr,name){var idx=WORKERS.indexOf(name),ip=arr.length;for(var i=0;i<arr.length;i++){if(WORKERS.indexOf(arr[i])>idx){ip=i;break;}}arr.splice(ip,0,name);}
 
-function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
+function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs){
   var fi=WORKERS.indexOf(firstWorker);
   // 초기 비번 범위: fi 앞 6명 (fi-6 ~ fi-1), 첫날 대양1번=fi
   var initBibStart=(fi-6+N)%N;
@@ -330,9 +330,8 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays){
       for(var si=0;si<sunFill.length&&bib.length<6;si++)bib.push(sunFill[si]);
     }
     var prevExclMap=d>0?(dayExcl[d-1]||{}):{};
-    var prevAutoVac=d>0?getAutoVac([state.weekDateObjs[d-1]])[0]:{};
+    var prevAutoVac=d>0?getAutoVac([dateObjs[d-1]])[0]:{};
     var absRet=Object.keys(prevExclMap).filter(function(w){return prevExclMap[w]==="결근"&&exclAll.indexOf(w)<0;});
-    // 수동 휴가 복귀 + 자동 휴가(autoVac) 복귀 모두 포함
     var vacRet=Object.keys(prevExclMap).filter(function(w){return prevExclMap[w]==="휴가"&&exclAll.indexOf(w)<0;});
     Object.keys(prevAutoVac).forEach(function(w){
       if(prevAutoVac[w]==="휴가"&&exclAll.indexOf(w)<0&&vacRet.indexOf(w)<0)vacRet.push(w);
@@ -512,7 +511,7 @@ function render(){
   var autoVac=getAutoVac(state.weekDateObjs);
   var merged=dayExcl.map(function(m,i){var r=Object.assign({},autoVac[i]);if(m&&typeof m==='object')Object.keys(m).forEach(function(k){r[k]=m[k];});return r;});
   var allSel=cd.every(function(c){return c!==null;});
-  var sched=(state.firstWorker&&allSel)?calcSchedule(cd,merged,state.firstWorker,sc,wk):null;
+  var sched=(state.firstWorker&&allSel)?calcSchedule(cd,merged,state.firstWorker,sc,wk,dateObjs):null;
 
   var app=document.getElementById("app");
   app.innerHTML="";
@@ -568,7 +567,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v4.4</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v4.5</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
