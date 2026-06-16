@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지게차 근무표 2주보기</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d1a;color:#e0e0f0;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+.header{background:linear-gradient(135deg,#0d0d1a 0%,#1a1a3e 100%);border-bottom:1px solid #ffffff11;padding:20px 16px 16px}
+.header-title{text-align:center;margin-bottom:14px}
+.header-sub{color:#4a9eff88;font-size:11px;letter-spacing:3px;font-weight:700;margin-bottom:2px}
+.header-date{font-size:13px;color:#888}
+.day-row{display:flex;gap:4px}
+.day-col{flex:1;display:flex;flex-direction:column;gap:4px}
+.day-label{font-size:12px;font-weight:700;text-align:center}
+.day-date{font-size:9px;color:#444;text-align:center}
+.btn{border-radius:8px;padding:5px 2px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;border:1px solid #333;background:#1a1a2e;color:#444;user-select:none}
+.btn.on-yes{background:#4a9eff;color:#fff;border-color:#4a9eff}
+.btn.on-no{background:#ff6b6b;color:#fff;border-color:#ff6b6b}
+.btn.has-excl{background:#ff9f7f22;color:#ff9f7f;border-color:#ff9f7f66;min-height:28px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px}
+.btn.no-excl{min-height:28px;display:flex;align-items:center;justify-content:center}
+.vac-btn-wrap{margin-top:10px;display:flex;gap:8px;justify-content:center}
+.vac-btn{display:inline-block;padding:6px 16px;border-radius:20px;background:#ffd93d22;border:1px solid #ffd93d44;color:#ffd93d;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px}
+.content{padding:16px 16px 60px;max-width:540px;margin:0 auto}
+.card{background:#13132a;border-radius:14px;padding:14px;margin-bottom:14px}
+.card-title{font-size:11px;font-weight:700;letter-spacing:2px;margin-bottom:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.wbtn{border:1.5px solid #ffffff11;border-radius:10px;padding:9px 4px;text-align:center;font-size:12px;color:#aaa;cursor:pointer;user-select:none;background:#1a1a2e}
+.wbtn.sel{background:#4a9eff22;border-color:#4a9eff;color:#fff;font-weight:700}
+.wbtn.my-sel{background:#ff9f7f22;border-color:#ff9f7f;color:#fff;font-weight:700}
+.hint{text-align:center;color:#444;font-size:13px;padding:16px 0}
+.sw{background:#13132a;border:1px solid #ffffff0a;border-radius:14px;overflow:hidden;margin-bottom:16px}
+.sw-hd{padding:12px 14px 8px;border-bottom:1px solid #ffffff0a;font-size:11px;color:#666;font-weight:700;letter-spacing:2px;display:flex;justify-content:space-between;align-items:center}
+.tw{overflow-x:auto;padding:8px 8px 4px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{padding:4px 6px;text-align:center;min-width:52px;background:#13132a}
+th.site-th{padding:6px 8px;color:#555;font-weight:700;text-align:left;white-space:nowrap;background:#13132a;position:sticky;left:0;z-index:2}
+td{padding:8px 4px;text-align:center;vertical-align:top;font-size:11px;font-weight:600;line-height:2}
+td.site-td{padding:8px;font-weight:700;font-size:11px;background:#13132a;position:sticky;left:0;z-index:1;border-top:1px solid #ffffff08;white-space:nowrap}
+.ref-wrap{padding:10px 14px 14px;border-top:1px solid #ffffff08}
+.ref-title{font-size:10px;color:#555;font-weight:700;letter-spacing:2px;margin-bottom:8px}
+.ref-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.ref-item{font-size:10px;color:#555}
+.ref-num{color:#4a9eff88;font-weight:700}
+.hl{background:#ff9f7f;color:#000;border-radius:4px;padding:0 3px;font-weight:900}
+.my-card{background:#13132a;border:1px solid #ff9f7f33;border-radius:14px;padding:14px;margin-bottom:14px}
+.my-title{font-size:11px;color:#ff9f7f;font-weight:700;letter-spacing:2px;margin-bottom:12px}
+.my-row{display:flex;flex-direction:column;gap:8px}
+.my-item{display:flex;align-items:center;gap:10px;background:#1a1a2e;border-radius:10px;padding:8px 12px}
+.my-day{font-size:12px;font-weight:700;color:#aaa;min-width:28px}
+.my-site{font-size:13px;font-weight:700}
+.pbg{position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.pinner{background:#13132a;border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto}
+.phead{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.pday{font-size:16px;font-weight:900;color:#fff}
+.pdate{font-size:12px;color:#555;margin-left:8px}
+.pclose{color:#555;font-size:20px;cursor:pointer;padding:0 4px}
+.phint{font-size:11px;color:#666;font-weight:700;letter-spacing:2px;margin-bottom:12px}
+.eb{border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;border:1.5px solid #ffffff11;background:#1a1a2e;transition:transform 0.15s}
+.eb:active{transform:scale(0.93)}
+.eb.absent{background:#ff6b6b22;border-color:#ff6b6b}
+.eb.vacation{background:#ffd93d22;border-color:#ffd93d}
+.eb.seaworld{background:#88eeff22;border-color:#88eeff}
+.eb.autovac{background:#ffd93d11;border-color:#ffd93d44;opacity:0.7}
+.eb.jad{background:#88cc8822;border-color:#88cc88}
+.en{font-size:12px;font-weight:600;color:#aaa}
+.en.absent{color:#ff6b6b}
+.en.vacation{color:#ffd93d}
+.en.seaworld{color:#88eeff}
+.en.autovac{color:#ffd93d}
+.en.jad{color:#88cc88}
+.et{font-size:10px;font-weight:700;margin-top:3px}
+.et.absent{color:#ff6b6b}
+.et.vacation{color:#ffd93d}
+.et.seaworld{color:#88eeff}
+.et.jad{color:#88cc88}
+.lock-btn{position:fixed;top:12px;right:52px;z-index:200;width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:1px solid #ffffff22;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
+.lock-btn.admin{border-color:#ffd93d;color:#ffd93d;background:#ffd93d11}
+.top-btn-group{position:fixed;top:12px;left:12px;z-index:150;display:flex;flex-direction:column;gap:6px;align-items:flex-start;max-width:120px}
+.sync-btn{padding:7px 12px;border-radius:16px;background:#4a9eff22;border:1px solid #4a9eff44;color:#4a9eff;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
+.sync-btn.syncing{opacity:0.6}
+.test-btn{padding:7px 12px;border-radius:16px;background:#ff9f7f22;border:1px solid #ff9f7f44;color:#ff9f7f;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
+.test-btn.active{background:#ff9f7f44;border-color:#ff9f7f}
+.disabled-btn{opacity:0.35;pointer-events:none}
+.vessel-popup-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:300;display:flex;flex-direction:column}
+.vessel-popup{background:#13132a;flex:1;display:flex;flex-direction:column;margin-top:60px;border-radius:20px 20px 0 0;overflow:hidden}
+.vessel-head{padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff11}
+.vessel-title{font-size:15px;font-weight:900;color:#fff}
+.vessel-close{color:#555;font-size:20px;cursor:pointer}
+.vessel-info{padding:12px 16px;background:#0d0d1a;display:flex;gap:16px;flex-wrap:wrap}
+.vessel-info-item{font-size:11px;color:#888}
+.vessel-info-val{font-size:13px;font-weight:700;color:#4a9eff;margin-top:2px}
+#vessel-map{flex:1;min-height:300px}
+.vessel-status{padding:8px 16px;font-size:11px;color:#ffd93d;text-align:center}
+.settings-btn{position:fixed;top:12px;right:12px;z-index:160;width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:1px solid #ffffff22;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
+.settings-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.settings-inner{background:#13132a;border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;max-width:480px;max-height:70vh;overflow-y:auto}
+.settings-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.settings-title{font-size:16px;font-weight:900;color:#fff}
+.settings-close{color:#555;font-size:20px;cursor:pointer;padding:0 4px}
+.settings-section{margin-bottom:20px}
+.settings-label{font-size:11px;color:#666;font-weight:700;letter-spacing:2px;margin-bottom:10px}
+.settings-options{display:flex;gap:8px;flex-wrap:wrap}
+.settings-opt{border:1.5px solid #333;border-radius:10px;padding:8px 14px;font-size:12px;color:#aaa;cursor:pointer;background:#1a1a2e;user-select:none;transition:all 0.15s}
+.settings-opt.active{border-color:#4a9eff;color:#fff;background:#4a9eff22;font-weight:700}
+.sun-btn{width:26px;height:26px;border-radius:6px;background:#1a1a2e;border:1px solid #333;color:#aaa;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
+.sun-cnt{font-size:13px;font-weight:700;min-width:20px;text-align:center}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// Firebase REST API
+var FB_URL='https://team-order-1cfb0-default-rtdb.asia-southeast1.firebasedatabase.app/forklift';
+
+// 관리자 체크
+function isAdmin(){return localStorage.getItem('adminMode')==='true';}
+function setAdmin(v){localStorage.setItem('adminMode',v?'true':'false');}
+
+// Firebase에서 데이터 불러오기
+function syncFromFirebase(callback){
+  fetch(FB_URL+'.json').then(function(r){return r.json();}).then(function(data){
+    if(data){
+      if(data.carDays){
+        state.carDays=data.carDays; // 날짜키 객체 그대로
+        localStorage.setItem('carPlan',JSON.stringify(data.carDays));
+      }
+      if(data.absentWorkers&&Array.isArray(data.absentWorkers))state.absentWorkers=data.absentWorkers;
+      if(data.dayExcludes){
+        state.dayExcludes=data.dayExcludes; // 날짜키 객체 그대로
+        localStorage.setItem('dayExcludes',JSON.stringify(data.dayExcludes));
+      }
+      if(typeof data.sundayCount==='number'){
+        state.sundayCount=data.sundayCount;
+        localStorage.setItem('sundayCount',data.sundayCount);
+      }
+      if(data.firstWorker){
+        state.firstWorker=data.firstWorker;
+        localStorage.setItem('firstWorker',JSON.stringify({date:new Date().toDateString(),name:data.firstWorker}));
+      }
+    }
+    autoSetFirstWorker();
+    render();
+    if(callback)callback();
+  }).catch(function(){
+    autoSetFirstWorker();
+    render();
+    if(callback)callback();
+  });
+}
+
+function autoSetFirstWorker(){
+  // Firebase에서 받은 firstWorker가 오늘 날짜가 아니면 자동 계산
+  var saved=null;
+  try{saved=JSON.parse(localStorage.getItem('firstWorker')||'null');}catch(e){}
+  var todayStr=new Date().toDateString();
+  if(saved&&saved.date===todayStr&&saved.name)return; // 오늘 이미 설정됨
+
+  // 전날 history에서 대양 1번 다음 사람 계산
+  var hist=state.history||[];
+  if(hist.length===0)return;
+  var yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  var yStr=yesterday.toDateString();
+  var yEntry=hist.find(function(h){return h.date===yStr;});
+  if(!yEntry||!yEntry.name)return;
+
+  // 전날 대양1번의 다음 순번
+  var idx=WORKERS.indexOf(yEntry.name);
+  if(idx<0)return;
+  var absent=state.absentWorkers||[];
+  var next=idx;
+  for(var i=1;i<=N;i++){
+    next=(idx+i)%N;
+    if(absent.indexOf(WORKERS[next])<0)break;
+  }
+  var newFirst=WORKERS[next];
+  state.firstWorker=newFirst;
+  localStorage.setItem('firstWorker',JSON.stringify({date:todayStr,name:newFirst}));
+  if(isAdmin())saveFirstWorker(newFirst);
+}
+
+// Firebase에 저장 (관리자만)
+function saveCarDays(map){
+  if(!isAdmin())return;
+  fetch(FB_URL+'/carDays.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(map)});
+}
+function saveSundayCount(cnt){
+  if(!isAdmin())return;
+  fetch(FB_URL+'/sundayCount.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cnt)});
+}
+function saveFirstWorker(name){
+  if(!isAdmin())return;
+  fetch(FB_URL+'/firstWorker.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(name)});
+}
+function saveAbsentWorkers(workers){
+  if(!isAdmin())return;
+  fetch(FB_URL+'/absentWorkers.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(workers)});
+}
+function saveDayExcludes(map){
+  if(!isAdmin())return;
+  fetch(FB_URL+'/dayExcludes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(map)});
+}
+
+// 실시간 리스너 (30초마다 폴링)
+var fbListening=false;
+function startFbListener(){
+  if(fbListening)return;
+  fbListening=true;
+  setInterval(function(){
+    if(!document.hidden)syncFromFirebase(null);
+  },600000);
+}
+
+var WORKERS=["이원훈","장형규","조현철","박진호","홍인석","하정남","황정호","김현진","전창범","오규종","김경훈","정철수","황인태","안찬범","김상원","이동현","김태민","김성환","김세영","홍원진","이재일","이준영","김태호","김택성","채관기","김재원","장병숙","윤광덕","박성기"];
+var N=WORKERS.length;
+var KR=["일","월","화","수","목","금","토"];
+var VACATION_SCHEDULE=[
+  {name:"김상원",start:"2026-04-13",end:"2026-04-16"},
+  {name:"황정호",start:"2026-04-20",end:"2026-04-23"},
+  {name:"하정남",start:"2026-04-27",end:"2026-04-30"},
+  {name:"이동현",start:"2026-05-04",end:"2026-05-07"},
+  {name:"장형규",start:"2026-05-18",end:"2026-05-21"},
+  {name:"조현철",start:"2026-05-26",end:"2026-05-29"},
+  {name:"홍인석",start:"2026-06-01",end:"2026-06-04"},
+  {name:"홍원진",start:"2026-06-15",end:"2026-06-18"},
+  {name:"김재원",start:"2026-06-22",end:"2026-06-25"},
+  {name:"황인태",start:"2026-06-29",end:"2026-07-02"},
+  {name:"김성환",start:"2026-07-06",end:"2026-07-09"},
+  {name:"오규종",start:"2026-07-13",end:"2026-07-16"},
+  {name:"이재일",start:"2026-07-20",end:"2026-07-23"},
+  {name:"김택성",start:"2026-07-27",end:"2026-07-30"},
+  {name:"김세영",start:"2026-08-03",end:"2026-08-06"},
+  {name:"정철수",start:"2026-08-10",end:"2026-08-13"},
+  {name:"전창범",start:"2026-08-18",end:"2026-08-21"},
+  {name:"김태민",start:"2026-08-25",end:"2026-08-28"},
+  {name:"이준영",start:"2026-08-31",end:"2026-09-03"},
+  {name:"채관기",start:"2026-09-08",end:"2026-09-11"},
+  {name:"장병숙",start:"2026-09-30",end:"2026-10-03"},
+  {name:"김경훈",start:"2026-10-05",end:"2026-10-08"},
+  {name:"윤광덕",start:"2026-10-28",end:"2026-10-31"},
+  {name:"안찬범",start:"2026-11-23",end:"2026-11-26"},
+  {name:"이원훈",start:"2026-12-07",end:"2026-12-10"},
+  {name:"김현진",start:"2026-12-21",end:"2026-12-24"},
+  {name:"박진호",start:"2026-12-28",end:"2026-12-31"},
+  {name:"박성기",start:"2027-01-25",end:"2027-01-28"}
+];
+var SEAWORLD_SCHEDULE=[
+  {name:"정태경",start:"2026-04-06",end:"2026-04-09"},
+  {name:"박혁신",start:"2026-05-11",end:"2026-05-14"},
+  {name:"김재일",start:"2026-06-17",end:"2026-06-21"},
+  {name:"문환석",start:"2026-10-14",end:"2026-10-17"}
+];
+
+function getStartOffset(monStart){return(monStart&&new Date().getDay()===0)?1:0;}
+function getWeekDates(monStart,weekOffset){weekOffset=weekOffset||0;var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<14;i++){var d=new Date(t);d.setDate(t.getDate()+off+weekOffset*7+i);r.push(pad(d.getMonth()+1)+"."+pad(d.getDate()));}return r;}
+function getWeekDays(monStart,weekOffset){weekOffset=weekOffset||0;var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<14;i++){var d=new Date(t);d.setDate(t.getDate()+off+weekOffset*7+i);r.push(KR[d.getDay()]);}return r;}
+function getWeekDateObjs(monStart,weekOffset){weekOffset=weekOffset||0;var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<14;i++){var d=new Date(t);d.setDate(t.getDate()+off+weekOffset*7+i);d.setHours(0,0,0,0);r.push(d);}return r;}
+function pad(n){return n<10?"0"+n:""+n;}
+function dateKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function fmtToday(){var t=new Date();return t.getFullYear()+"."+pad(t.getMonth()+1)+"."+pad(t.getDate());}
+function fmtVacDate(s){var d=new Date(s+"T00:00:00");return(d.getMonth()+1)+"/"+d.getDate()+"("+KR[d.getDay()]+")";}
+function toNum(name){return WORKERS.indexOf(name)+1;}
+
+function getAutoVac(dateObjs){
+  var r=[];for(var i=0;i<7;i++){r.push({});}
+  // 씨월드 땜빵: dayExcludes에서 씨월드로 지정된 인원 찾기
+  var swSubs={};
+  dateObjs.forEach(function(cur){
+    var k=dateKey(cur);
+    var exclMap=state.dayExcludes[k]||{};
+    Object.keys(exclMap).forEach(function(name){
+      if(exclMap[name]==="씨월드"&&!swSubs[name]){
+        // 씨월드 스케줄 중 지정날짜와 가장 가까운(또는 포함하는) 스케줄 찾기
+        var best=null,bestDiff=Infinity;
+        SEAWORLD_SCHEDULE.forEach(function(v){
+          var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");
+          if(cur>=s&&cur<=e){best=v;bestDiff=0;}// 기간 안
+          else if(bestDiff>0){
+            var diff=Math.min(Math.abs(cur-s),Math.abs(cur-e));
+            if(diff<bestDiff){bestDiff=diff;best=v;}
+          }
+        });
+        if(best)swSubs[name]=best;
+      }
+    });
+  });
+  dateObjs.forEach(function(cur,idx){
+    VACATION_SCHEDULE.forEach(function(v){var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");if(cur>=s&&cur<=e)r[idx][v.name]="휴가";});
+    SEAWORLD_SCHEDULE.forEach(function(v){var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");if(cur>=s&&cur<=e)r[idx][v.name]="씨월드";});
+    Object.keys(swSubs).forEach(function(name){
+      var v=swSubs[name];
+      var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");
+      if(cur>=s&&cur<=e)r[idx][name]="씨월드";
+    });
+  });
+  return r;
+}
+
+function pickFwd(count,startIdx,excl){var team=[],cur=((startIdx%N)+N)%N,safe=0;while(team.length<count&&safe<N*2){var name=WORKERS[cur];cur=(cur+1)%N;safe++;if(excl.indexOf(name)<0&&team.indexOf(name)<0)team.push(name);}return{team:team,next:cur};}
+function pickRev(count,fromIdx,excl){var team=[],cur=((fromIdx%N)+N)%N,safe=0;while(team.length<count&&safe<N*2){var name=WORKERS[cur];safe++;if(excl.indexOf(name)<0&&team.indexOf(name)<0)team.push(name);cur=((cur-1)+N)%N;}return{team:team.reverse(),next:cur};}
+function insertOrder(arr,name){var idx=WORKERS.indexOf(name),ip=arr.length;for(var i=0;i<arr.length;i++){if(WORKERS.indexOf(arr[i])>idx){ip=i;break;}}arr.splice(ip,0,name);}
+
+function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs){
+  var fi=WORKERS.indexOf(firstWorker);
+  // 초기 비번 범위: fi 앞 6명 (fi-6 ~ fi-1), 첫날 대양1번=fi
+  var initBibStart=(fi-6+N)%N;
+  var initBib=[];for(var ii=0;ii<6;ii++)initBib.push(WORKERS[(initBibStart+ii)%N]);
+  var cursor=fi,prevDae=initBib,prevSun=[],prevYac=[],prevActBib=initBib;
+  var result=[];
+  for(var d=0;d<carDays.length;d++){
+    var hasCar=carDays[d],prevCar=d>0?carDays[d-1]:null;
+    var exclMap=dayExcl[d]||{};
+    // 자동차 지정자 분리 - 일반 배정에서 완전히 제외하고 jad에만 강제 배정
+    var jadForced=Object.keys(exclMap).filter(function(w){return exclMap[w]==="자동차";});
+    var excl=Object.keys(exclMap).filter(function(w){return exclMap[w]!=="자동차";});
+    // exclAll = 일반 배정에서 제외할 전체 목록 (결근/휴가/씨월드 + 자동차)
+    var exclAll=excl.concat(jadForced);
+    var avail=WORKERS.filter(function(w){return exclAll.indexOf(w)<0;});
+    // 비번 = 전날 실제 대양 근무자 그대로
+    // 자동차(jadForced)는 이미 exclAll에서 제외됨 → 자동차 지정자는 비번 없음
+    // 오늘 결근/씨월드인 사람만 비번에서 제외
+    var bib=prevDae.filter(function(w){return exclAll.indexOf(w)<0;});
+    // 비번 6명 미달 시 전날 성우 순번으로 보충
+    if(bib.length<6&&prevSun.length>0){
+      var sunFill=prevSun.filter(function(w){return exclAll.indexOf(w)<0&&bib.indexOf(w)<0;});
+      var need=6-bib.length;
+      for(var si=0;si<sunFill.length&&bib.length<6;si++)bib.push(sunFill[si]);
+    }
+    var prevExclMap=d>0?(dayExcl[d-1]||{}):{};
+    var prevAutoVac=d>0?getAutoVac([dateObjs[d-1]])[0]:{};
+    var absRet=Object.keys(prevExclMap).filter(function(w){return prevExclMap[w]==="결근"&&exclAll.indexOf(w)<0;});
+    var vacRet=Object.keys(prevExclMap).filter(function(w){return prevExclMap[w]==="휴가"&&exclAll.indexOf(w)<0;});
+    Object.keys(prevAutoVac).forEach(function(w){
+      if(prevAutoVac[w]==="휴가"&&exclAll.indexOf(w)<0&&vacRet.indexOf(w)<0)vacRet.push(w);
+    });
+    // 휴가 복귀자는 bib에서 제거 → 일반 배정에 포함
+    vacRet.forEach(function(ret){bib=bib.filter(function(w){return w!==ret;});});
+    // 비번 인원도 배정에서 제외
+    var exclWithBib=exclAll.concat(bib);
+    if(hasCar){
+      var dae,sun,yac,jay;
+      if(d===0||!prevCar){
+        var r1=pickFwd(6,cursor,exclWithBib);dae=r1.team;
+        var r2=pickFwd(4,r1.next,exclWithBib);sun=r2.team;
+        var r3=pickFwd(6,r2.next,exclWithBib);yac=r3.team;
+        var r4=pickFwd(4,r3.next,exclWithBib);jay=r4.team;
+        cursor=r4.next;
+      } else {
+        dae=prevSun.concat(prevYac.slice(0,2)).filter(function(w){return exclWithBib.indexOf(w)<0;});
+        // dae 6명 미달 시 prevYac 나머지에서 순서대로 보충
+        var yacUsed=2;
+        for(var yi=2;yi<prevYac.length&&dae.length<6;yi++){
+          var w=prevYac[yi];
+          if(exclWithBib.indexOf(w)<0&&dae.indexOf(w)<0){dae.push(w);yacUsed=yi+1;}
+        }
+        // sun = prevYac에서 dae에 안 쓴 나머지 (최대 4명)
+        sun=[];
+        for(var yi2=yacUsed;yi2<prevYac.length&&sun.length<4;yi2++){
+          var w2=prevYac[yi2];
+          if(exclWithBib.indexOf(w2)<0&&dae.indexOf(w2)<0)sun.push(w2);
+        }
+        // sun 부족 시 prevJay 앞번호부터 보충, 그래도 부족하면 cursor
+        if(sun.length<4){
+          var jayFill=result[d-1].jay.filter(function(w){return exclWithBib.indexOf(w)<0&&dae.indexOf(w)<0&&sun.indexOf(w)<0;});
+          while(sun.length<4&&jayFill.length>0)sun.push(jayFill.shift());
+        }
+        if(sun.length<4){var rFill2=pickFwd(4-sun.length,cursor,exclWithBib.concat(dae).concat(sun));sun=sun.concat(rFill2.team);cursor=rFill2.next;}
+        var pj=result[d-1].jay.filter(function(w){return exclWithBib.indexOf(w)<0&&sun.indexOf(w)<0;});
+        var r1=pickFwd(6-pj.length,cursor,exclWithBib.concat(dae).concat(sun));yac=pj.concat(r1.team);cursor=r1.next;
+        var r2=pickFwd(4,cursor,exclWithBib.concat(dae).concat(sun).concat(yac));jay=r2.team;cursor=r2.next;
+      }
+      var jadExtra=[];
+      absRet.forEach(function(ret){
+        if(dae.indexOf(ret)>=0)dae=dae.filter(function(w){return w!==ret;});
+        jadExtra.push(ret);
+        var lastBibIdx=WORKERS.indexOf(bib[bib.length-1]);
+        var nextIdx=(lastBibIdx+1)%N;
+        while(exclWithBib.indexOf(WORKERS[nextIdx])>=0||jadExtra.indexOf(WORKERS[nextIdx])>=0){nextIdx=(nextIdx+1)%N;}
+        bib.push(WORKERS[nextIdx]);
+      });
+      // 휴가 복귀자 순번대로 삽입
+      vacRet.forEach(function(ret){
+        if(dae.indexOf(ret)>=0||sun.indexOf(ret)>=0||yac.indexOf(ret)>=0||jay.indexOf(ret)>=0)return;
+        insertOrder(dae,ret);
+        if(dae.length>6){
+          var p=dae.pop();
+          insertOrder(sun,p);
+          if(sun.length>4){
+            // sun 마지막 한 명을 야차 시작점으로
+            var newStart=sun.pop();
+            var newCursor=WORKERS.indexOf(newStart);
+            var r3=pickFwd(6,newCursor,exclWithBib.concat(dae).concat(sun));
+            yac=r3.team;
+            var r4=pickFwd(4,r3.next,exclWithBib.concat(dae).concat(sun).concat(yac));
+            jay=r4.team;cursor=r4.next;
+          }
+        }
+      });
+      // vacRet(휴가복귀자)는 exclAll에 없으므로 pickFwd/pickRev가 자동으로 순번 포함
+      var assigned=dae.concat(sun,yac,jay,bib);
+      var jad=avail.filter(function(w){return assigned.indexOf(w)<0&&vacRet.indexOf(w)<0;});
+      jadExtra.forEach(function(ret){if(jad.indexOf(ret)<0)jad.push(ret);});
+      jadForced.forEach(function(w){if(jad.indexOf(w)<0)jad.push(w);});
+      result.push({hasCar:true,dae:dae,sun:sun,yac:yac,jay:jay,jad:jad,bib:bib,rest:[],excl:exclMap});
+      prevDae=dae;prevSun=sun;prevYac=yac;prevActBib=bib;
+    } else {
+      // 차없음 또는 일요일
+      var isSunday=weekDays&&weekDays[d]==="일";
+      if(isSunday&&sundayCount>0){
+        // 일요근무 배정
+        // 전날 차있음→차없음: 전날 비번 말번부터 역순
+        // 전날 차없음 연속: 전날 대양 1번 앞번호부터 역순
+        var li;
+        if(prevCar===false){
+          li=(WORKERS.indexOf(prevDae[0])-1+N)%N;
+        } else {
+          li=WORKERS.indexOf(bib[bib.length-1]);
+        }
+        var sw=pickRev(sundayCount,li,exclWithBib).team;
+        var rest=avail.filter(function(w){return sw.indexOf(w)<0&&bib.indexOf(w)<0;});
+        result.push({hasCar:false,dae:[],sun:[],yac:[],jay:[],jad:jadForced,sunw:sw,bib:bib,rest:rest,excl:exclMap,isSun:true});
+        var bibForNext=sw.slice();
+        if(bibForNext.length>6){bibForNext=bibForNext.slice(0,6);}
+        else if(bibForNext.length<6){
+          var cur2=(WORKERS.indexOf(bibForNext[bibForNext.length-1])+1)%N;
+          while(bibForNext.length<6){
+            if(exclAll.indexOf(WORKERS[cur2])<0&&bibForNext.indexOf(WORKERS[cur2])<0)bibForNext.push(WORKERS[cur2]);
+            cur2=(cur2+1)%N;
+          }
+        }
+        cursor=(WORKERS.indexOf(bibForNext[bibForNext.length-1])+1)%N;
+        prevDae=bibForNext;prevSun=[];prevYac=[];prevActBib=sw;
+      } else {
+        if(d===0||prevCar===null){
+          // 첫날: firstWorker부터 순방향
+          var li=WORKERS.indexOf(firstWorker);
+          var rD=pickFwd(6,li,exclWithBib),rS=pickFwd(4,rD.next,exclWithBib),rJ=pickFwd(4,rS.next,exclWithBib);
+          var dae=rD.team,sun=rS.team,jay=rJ.team;
+        } else if(prevCar===true){
+          // 차있음→차없음 전환: 전날 비번 말번부터 역순
+          var liStart=WORKERS.indexOf(prevActBib[prevActBib.length-1]);
+          var rJ=pickRev(4,liStart,exclWithBib);
+          var rS=pickRev(4,rJ.next,exclWithBib);
+          var rD=pickRev(6,rS.next,exclWithBib);
+          var jay=rJ.team,sun=rS.team,dae=rD.team;
+        } else {
+          // 차없음 연속: 전날 대양 1번 앞번호 = 제이 말번, 역순으로 제이→성우→대양
+          var liStart=(WORKERS.indexOf(prevDae[0])-1+N)%N;
+          var rJ=pickRev(4,liStart,exclWithBib);
+          var rS=pickRev(4,rJ.next,exclWithBib);
+          var rD=pickRev(6,rS.next,exclWithBib);
+          var jay=rJ.team,sun=rS.team,dae=rD.team;
+        }
+        absRet.forEach(function(ret){
+          insertOrder(jay,ret);
+          if(jay.length>4){var pushed=jay.shift();insertOrder(sun,pushed);if(sun.length>4){var pushed2=sun.shift();insertOrder(dae,pushed2);if(dae.length>6){var pushed3=dae.shift();bib.push(pushed3);}}}
+        });
+        var assigned=dae.concat(sun,jay,bib);
+        var rest=avail.filter(function(w){return assigned.indexOf(w)<0&&bib.indexOf(w)<0;});
+        result.push({hasCar:false,dae:dae,sun:sun,yac:[],jay:jay,jad:jadForced,bib:bib,rest:rest,excl:exclMap});
+        prevDae=dae;prevSun=sun;prevYac=[];prevActBib=bib;
+        if(d<carDays.length-1&&carDays[d+1])cursor=(WORKERS.indexOf(dae[dae.length-1])+1)%N;
+      }
+    }
+  }
+  return result;
+}
+
+var state={
+  carDays:(function(){
+    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('carPlan')||'null');if(s&&typeof s==='object'&&!Array.isArray(s))return s;}catch(e){}}
+    return {};
+  })(),
+  firstWorker:(function(){
+    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('firstWorker')||'null');if(s&&s.date===new Date().toDateString())return s.name||'';}catch(e){}}
+    return '';
+  })(),
+  myName:localStorage.getItem('myName')||'',
+  absentWorkers:[],
+  testMode:false,
+  vesselPopup:false,
+  vesselData:null,
+  dayExcludes:(function(){
+    if(isAdmin()){try{var s=JSON.parse(localStorage.getItem('dayExcludes')||'null');if(s&&typeof s==='object'&&!Array.isArray(s))return s;}catch(e){}}
+    return {};
+  })(),
+  sundayCount:(function(){
+    if(isAdmin())return parseInt(localStorage.getItem('sundayCount')||'4',10);
+    return 4;
+  })(),
+  history:(function(){try{return JSON.parse(localStorage.getItem('dayHistory')||'[]');}catch(e){return[];}})(),
+  settings:{font:"system",size:4,skin:"dark"},
+  monStart:localStorage.getItem('monStart')==='true',
+  weekOffset:0,
+  popupDay:null,vacPopup:false,settingsOpen:false,
+  myNameOpen:localStorage.getItem('myNameOpen')!=='false',
+  d1Open:localStorage.getItem('d1Open')==='true',
+  weekDates:getWeekDates(localStorage.getItem('monStart')==='true',0),
+  weekDays:getWeekDays(localStorage.getItem('monStart')==='true',0),
+  weekDateObjs:getWeekDateObjs(localStorage.getItem('monStart')==='true',0)
+};
+
+function setState(patch){for(var k in patch)state[k]=patch[k];render();}
+
+function h(tag,attrs,children){
+  var el=document.createElement(tag);
+  if(attrs)for(var k in attrs){if(k==="className")el.className=attrs[k];else if(k.startsWith("on"))el[k.toLowerCase()]=attrs[k];else el.setAttribute(k,attrs[k]);}
+  if(children){if(typeof children==="string")el.innerHTML=children;else if(Array.isArray(children))children.forEach(function(c){if(c)el.appendChild(typeof c==="string"?document.createTextNode(c):c);});else el.appendChild(children);}
+  return el;
+}
+
+function applySettings(s){
+  var sizes=[10,11,12,13,14,15,16];
+  var size=(sizes[s.size]||13)+"px";
+  var styleEl=document.getElementById("dyn-style");
+  if(!styleEl){styleEl=document.createElement("style");styleEl.id="dyn-style";document.head.appendChild(styleEl);}
+  styleEl.textContent="body{font-size:"+size+"!important}";
+}
+
+function render(){
+  applySettings(state.settings);
+  var wd=state.weekDates,wk=state.weekDays;
+  var dateObjs=state.weekDateObjs;
+  var cd=dateObjs.map(function(d,i){
+    var k=dateKey(d);
+    if(wk[i]==="일")return false;
+    var v=state.carDays[k];
+    return(v===true||v===false)?v:null;
+  });
+  var dayExcl=dateObjs.map(function(d){
+    return state.dayExcludes[dateKey(d)]||{};
+  });
+  var sc=state.sundayCount;
+  var autoVac=getAutoVac(state.weekDateObjs);
+  var merged=dayExcl.map(function(m,i){var r=Object.assign({},autoVac[i]);if(m&&typeof m==='object')Object.keys(m).forEach(function(k){r[k]=m[k];});return r;});
+  var allSel=cd.every(function(c){return c!==null;});
+  var sched=(state.firstWorker&&allSel)?calcSchedule(cd,merged,state.firstWorker,sc,wk,dateObjs):null;
+
+  var app=document.getElementById("app");
+  app.innerHTML="";
+
+  var oldAdmin=document.getElementById('adminLabel');
+  if(oldAdmin)oldAdmin.parentNode.removeChild(oldAdmin);
+  if(isAdmin()){
+    var adminLabel=h("div",{style:"position:fixed;top:16px;right:92px;z-index:160;font-size:12px;font-weight:900;color:#ffd93d;letter-spacing:1px;text-shadow:0 0 8px #ffd93d88"},"관리자 모드");
+    adminLabel.id='adminLabel';
+    app.appendChild(adminLabel);
+  }
+  // 상단 왼쪽 버튼 그룹 (동기화 + 월시작) - 먼저 추가
+  var topBtnGroup=h("div",{className:"top-btn-group"});
+  var syncBtn=h("div",{className:"sync-btn"},"🔄 동기화");
+  syncBtn.onclick=function(){
+    syncBtn.className="sync-btn syncing";
+    syncBtn.textContent="⏳";
+    syncFromFirebase(function(){
+      syncBtn.className="sync-btn";
+      syncBtn.textContent="✅";
+      setTimeout(function(){syncBtn.textContent="🔄 동기화";},2000);
+    });
+  };
+  topBtnGroup.appendChild(syncBtn);
+  var monStartBtn=h("div",{className:"sync-btn"+(state.monStart?" active":""),style:"background:"+(state.monStart?"#ffd93d22":"#4a9eff22")+";border-color:"+(state.monStart?"#ffd93d44":"#4a9eff44")+";color:"+(state.monStart?"#ffd93d":"#4a9eff")},state.monStart?"🗓월 ✓":"🗓월");
+  monStartBtn.onclick=function(){
+    var v=!state.monStart;
+    localStorage.setItem('monStart',String(v));
+    var newWk=getWeekDays(v);
+    setState({monStart:v,weekDates:getWeekDates(v,state.weekOffset),weekDays:newWk,weekDateObjs:getWeekDateObjs(v,state.weekOffset)});
+  };
+  topBtnGroup.appendChild(monStartBtn);
+  app.appendChild(topBtnGroup);
+
+  // 설정/자물쇠 버튼 - topBtnGroup 이후에 추가해야 DOM상 위에 렌더링
+  var settBtn=h("div",{className:"settings-btn"},"⚙️");
+  settBtn.onclick=function(){setState({settingsOpen:true});};
+  app.appendChild(settBtn);
+
+  var lockBtn=h("div",{className:"lock-btn"+(isAdmin()?" admin":"")},isAdmin()?"🔓":"🔒");
+  lockBtn.onclick=function(){
+    if(isAdmin()){
+      if(confirm("관리자 모드를 해제할까요?")){setAdmin(false);syncFromFirebase(null);}
+    } else {
+      var pw=prompt("관리자 비밀번호를 입력하세요");
+      if(pw==="100410004"){setAdmin(true);alert("관리자 모드 활성화!");render();}
+      else if(pw!==null){alert("비밀번호가 틀렸습니다.");}
+    }
+  };
+  app.appendChild(lockBtn);
+
+  var hdr=h("div",{className:"header"});
+  var htitle=h("div",{className:"header-title"});
+  var subEl=document.createElement("div");
+  subEl.className="header-sub";
+  subEl.innerHTML="2주 예상근무표 <span style='color:#4a9eff44;font-size:10px'>v5.9</span>";
+  var reloadBtn=document.createElement("span");
+  reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
+  reloadBtn.textContent="🔄";
+  reloadBtn.onclick=function(){
+    if(sessionStorage.getItem('reloaded')){
+      reloadBtn.style.opacity='0.3';
+      reloadBtn.style.pointerEvents='none';
+      return;
+    }
+    sessionStorage.setItem('reloaded','1');
+    location.reload();
+  };
+  if(sessionStorage.getItem('reloaded')){
+    reloadBtn.style.opacity='0.3';
+    reloadBtn.style.pointerEvents='none';
+  }
+  subEl.appendChild(reloadBtn);
+  htitle.appendChild(subEl);
+  var dateWrap=h("div",{style:"display:flex;align-items:center;gap:8px"});
+  dateWrap.appendChild(h("div",{className:"header-date"},"오늘 · "+fmtToday()));
+  var plusBtn=h("div",{style:"font-size:11px;padding:3px 8px;border-radius:10px;background:#4a9eff22;border:1px solid #4a9eff44;color:#4a9eff;cursor:pointer"},"← 이번주");
+  plusBtn.onclick=function(){window.location.href='index.html';};
+  dateWrap.appendChild(plusBtn);
+  htitle.appendChild(dateWrap);
+  hdr.appendChild(htitle);
+
+  var dayRow=h("div",{className:"day-row"});
+  wk.forEach(function(day,idx){
+    var isWe=day==="토"||day==="일";
+    var val=cd[idx];
+    var exclMap=merged[idx]||{};
+    var vacCnt=Object.keys(exclMap).filter(function(k){return exclMap[k]==="휴가";}).length;
+    var absCnt=Object.keys(exclMap).filter(function(k){return exclMap[k]==="결근";}).length;
+    var swCnt=Object.keys(exclMap).filter(function(k){return exclMap[k]==="씨월드";}).length;
+    var jadCnt=Object.keys(exclMap).filter(function(k){return exclMap[k]==="자동차";}).length;
+    var exCount=vacCnt+absCnt+swCnt+jadCnt;
+    var col=h("div",{className:"day-col"});
+    col.appendChild(h("div",{className:"day-label",style:"color:"+(isWe?"#ff6b6b":"#aaa")},day));
+    col.appendChild(h("div",{className:"day-date"},wd[idx]));
+    var btnY=h("div",{className:"btn"+(day!=="일"&&val===true?" on-yes":"")+(day==="일"?" disabled-btn":"")},"있음");
+    if(day!=="일")(function(i){btnY.onclick=function(){toggleCar(i,true);};})(idx);
+    col.appendChild(btnY);
+    var btnN=h("div",{className:"btn"+(val===false?" on-no":"")},"없음");
+    if(day!=="일")(function(i){btnN.onclick=function(){toggleCar(i,false);};})(idx);
+    col.appendChild(btnN);
+    var btnE=h("div",{className:"btn"+(exCount>0?" has-excl":" no-excl")});
+    if(exCount>0){
+      var parts=[];
+      if(vacCnt>0)parts.push("휴"+vacCnt);
+      if(absCnt>0)parts.push("결"+absCnt);
+      if(swCnt>0)parts.push("씨"+swCnt);
+      if(jadCnt>0)parts.push("차"+jadCnt);
+      btnE.textContent=parts.join(" ");
+    } else {btnE.textContent="제외";}
+    (function(i){btnE.onclick=function(){setState({popupDay:i});};})(idx);
+    col.appendChild(btnE);
+
+    dayRow.appendChild(col);
+  });
+  hdr.appendChild(dayRow);
+
+  // 상태창
+  var allVacList=[],allAbsList=[],allSwList=[],allJadList=[];
+  merged.forEach(function(exclMap,i){
+    var dayLabel=wk[i];
+    var dateObj=dateObjs[i];
+    Object.keys(exclMap).forEach(function(name){
+      var t=exclMap[name];
+      if(t==="휴가")allVacList.push(name+"("+dayLabel+")");
+      else if(t==="결근")allAbsList.push(name+"("+dayLabel+")");
+      else if(t==="씨월드"){
+        // 원래 씨월드 스케줄 인원이면 휴가, 땜빵이면 씨월드
+        var isOrig=SEAWORLD_SCHEDULE.some(function(v){return v.name===name&&dateObj>=new Date(v.start+"T00:00:00")&&dateObj<=new Date(v.end+"T00:00:00");});
+        if(isOrig)allVacList.push(name+"("+dayLabel+")");
+        else allSwList.push(name+"("+dayLabel+")");
+      }
+      else if(t==="자동차")allJadList.push(name+"("+dayLabel+")");
+    });
+  });
+  function dedup(arr){var seen={},out=[];arr.forEach(function(v){var n=v.split("(")[0];if(!seen[n]){seen[n]=v;out.push(v);}});return out;}
+  allVacList=dedup(allVacList);allAbsList=dedup(allAbsList);allSwList=dedup(allSwList);allJadList=dedup(allJadList);
+
+  var bottomRow=h("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-top:10px;min-height:36px"});
+  var infoLeft=h("div",{style:"flex:1;padding-right:8px"});
+  if(allVacList.length>0||allAbsList.length>0||allSwList.length>0||allJadList.length>0){
+    var infoLine=document.createElement("div");
+    infoLine.style.cssText="font-size:13px;font-weight:700;line-height:1.8;display:flex;flex-wrap:wrap;gap:8px";
+    if(allVacList.length>0){var sp=document.createElement("span");sp.style.color="#ffd93d";sp.textContent="휴가·"+allVacList.join(" ");infoLine.appendChild(sp);}
+    if(allAbsList.length>0){var sp=document.createElement("span");sp.style.color="#ff6b6b";sp.textContent="결근·"+allAbsList.join(" ");infoLine.appendChild(sp);}
+    if(allSwList.length>0){var sp=document.createElement("span");sp.style.color="#88eeff";sp.textContent="씨월드·"+allSwList.join(" ");infoLine.appendChild(sp);}
+    if(allJadList.length>0){var sp=document.createElement("span");sp.style.color="#88cc88";sp.textContent="차·"+allJadList.join(" ");infoLine.appendChild(sp);}
+    infoLeft.appendChild(infoLine);
+  }
+  var infoRight=h("div",{style:"display:flex;flex-direction:column;align-items:flex-end;gap:2px"});
+  var lbl2=h("div",{style:"font-size:11px;color:#888"},"일요근무인원");
+  var sr2=document.createElement("div");
+  sr2.style.cssText="display:flex;align-items:center;gap:3px";
+  var bm2=h("div",{className:"sun-btn"},"-");
+  bm2.onclick=function(){var v=Math.max(0,state.sundayCount-1);localStorage.setItem('sundayCount',v);if(isAdmin())saveSundayCount(v);setState({sundayCount:v});};
+  var cnt2=h("div",{className:"sun-cnt",style:"color:"+(sc>0?"#ffd93d":"#555")},String(sc));
+  var bp2=h("div",{className:"sun-btn"},"+");
+  bp2.onclick=function(){var v=Math.min(29,state.sundayCount+1);localStorage.setItem('sundayCount',v);if(isAdmin())saveSundayCount(v);setState({sundayCount:v});};
+  sr2.appendChild(bm2);sr2.appendChild(cnt2);sr2.appendChild(bp2);
+  infoRight.appendChild(lbl2);infoRight.appendChild(sr2);
+  bottomRow.appendChild(infoLeft);bottomRow.appendChild(infoRight);
+  hdr.appendChild(bottomRow);
+
+  var vb=h("div",{className:"vac-btn-wrap"});
+  var tbtn=h("div",{className:"vac-btn",style:"background:#4a9eff22;border-color:#4a9eff44;color:#4a9eff"},"🌊 물때");
+  tbtn.onclick=function(){
+    var t=new Date();
+    var ds=t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate());
+    window.open('https://m.badatime.com/view.jsp?idx=105&date='+ds,'_blank');
+  };
+  vb.appendChild(tbtn);
+  var sbtn=h("div",{className:"vac-btn",style:"background:#88eeff22;border-color:#88eeff44;color:#88eeff"},"🚢 성우제주호");
+  sbtn.onclick=function(){window.open('http://1.diskpark.me/team/vessel.html','_blank');};
+  vb.appendChild(sbtn);
+  var vbtn=h("div",{className:"vac-btn"},"📋 연간 휴가 리스트");
+  vbtn.onclick=function(){setState({vacPopup:true});};
+  vb.appendChild(vbtn);
+  var obtn=h("div",{className:"vac-btn",style:"background:#ff9f7f22;border-color:#ff9f7f44;color:#ff9f7f"},"🍽 억순이네");
+  obtn.onclick=function(){window.open('https://1.diskpark.me/order/','_blank');};
+  vb.appendChild(obtn);
+  hdr.appendChild(vb);
+  app.appendChild(hdr);
+
+  var cont=h("div",{className:"content"});
+
+  // 내 이름
+  var myCard=h("div",{className:"card",style:"border:1px solid #ff9f7f22"});
+  var myHead=h("div",{style:"display:flex;justify-content:space-between;align-items:center;cursor:pointer"});
+  var myTitleEl=document.createElement("div");
+  myTitleEl.style.cssText="font-size:11px;font-weight:700;letter-spacing:2px;color:#ff9f7f";
+  myTitleEl.textContent="▪ 내 이름 선택"+(state.myName?" · "+state.myName:"");
+  var myToggle=h("div",{style:"color:#aaa;font-size:11px;font-weight:700"},state.myNameOpen?"▲ 접기":"▼ 펼치기");
+  myHead.appendChild(myTitleEl);myHead.appendChild(myToggle);
+  myHead.onclick=function(){var next=!state.myNameOpen;localStorage.setItem('myNameOpen',next);setState({myNameOpen:next});};
+  myCard.appendChild(myHead);
+  if(state.myNameOpen){
+    var myGrid=h("div",{className:"grid4",style:"margin-top:10px"});
+    WORKERS.forEach(function(name){
+      var btn=h("div",{className:"wbtn"+(state.myName===name?" my-sel":"")},name);
+      btn.onclick=function(e){e.stopPropagation();selectMyName(name);};
+      myGrid.appendChild(btn);
+    });
+    myCard.appendChild(myGrid);
+  }
+  cont.appendChild(myCard);
+
+  // 대양 1번
+  var d1Card=h("div",{className:"card",style:"border:1px solid #4a9eff22"});
+  var d1Head=h("div",{style:"display:flex;justify-content:space-between;align-items:center;"+(isAdmin()?"cursor:pointer":"")});
+  var d1TitleEl=document.createElement("div");
+  d1TitleEl.style.cssText="font-size:11px;font-weight:700;letter-spacing:2px;color:#4a9eff";
+  d1TitleEl.textContent="▪ 대양 1번"+(state.firstWorker?" · "+state.firstWorker:"" );
+  d1Head.appendChild(d1TitleEl);
+  var d1Toggle=h("div",{style:"color:#aaa;font-size:11px;font-weight:700"},state.d1Open?"▲ 접기":"▼ 펼치기");
+  d1Head.appendChild(d1Toggle);
+  d1Head.onclick=function(){var next=!state.d1Open;localStorage.setItem('d1Open',next);setState({d1Open:next});};
+  d1Card.appendChild(d1Head);
+  if(state.d1Open){
+    var d1Grid=h("div",{className:"grid4",style:"margin-top:10px"});
+    var hist=state.history||[];
+    WORKERS.forEach(function(name){
+      var btn=h("div",{className:"wbtn"+(state.firstWorker===name?" sel":""),style:"position:relative;padding-bottom:14px"});
+      var nameEl=document.createElement("div");nameEl.textContent=name;
+      btn.appendChild(nameEl);
+      hist.forEach(function(h2){
+        if(h2.name===name){
+          var d=new Date(h2.date),t=new Date();t.setHours(0,0,0,0);d.setHours(0,0,0,0);
+          var diff=Math.round((t-d)/(1000*60*60*24));
+          var lbl=diff===0?"오늘 1번":diff===1?"어제 1번":"";
+          if(lbl){var tag=document.createElement("div");tag.style.cssText="font-size:9px;color:#ffd93d;font-weight:700;margin-top:2px";tag.textContent=lbl;btn.appendChild(tag);}
+        }
+      });
+      (function(n){btn.onclick=function(){selectFirstWorker(n);};})(name);
+      d1Grid.appendChild(btn);
+    });
+    d1Card.appendChild(d1Grid);
+  }
+  cont.appendChild(d1Card);
+
+  if(!sched){cont.appendChild(h("div",{className:"hint"},allSel?"👆 오늘 대양 1번을 선택해주세요":"📅 모든 날 차 유무를 선택해주세요"));}
+  if(sched&&state.myName){cont.appendChild(renderMySchedule(sched,wk,wd,dateObjs));}
+  if(sched){cont.appendChild(renderTable(sched,wk,wd,cd,merged));}
+  app.appendChild(cont);
+
+  if(state.popupDay!==null){app.appendChild(renderPopup(state.popupDay,wk,wd,merged,dayExcl));}
+  if(state.vacPopup){app.appendChild(renderVacPopup());}
+  if(state.vesselPopup){app.appendChild(renderVesselPopup());}
+  if(state.settingsOpen){app.appendChild(renderSettings());}
+}
+
+var SITES=[
+  {key:"dae",label:"대양",color:"#4a9eff"},
+  {key:"sun",label:"성우",color:"#6effb4"},
+  {key:"yac",label:"야차",color:"#ffd93d"},
+  {key:"jay",label:"제이",color:"#ff9f7f"},
+  {key:"jad",label:"자동차",color:"#88cc88"},
+  {key:"sunw",label:"일요근무",color:"#ffd93d"},
+  {key:"rest",label:"비번",color:"#888888"},
+  {key:"bib",label:"비번",color:"#cccc55"},
+  {key:"excl",label:"결근/휴가",color:"#ff6b6b"}
+];
+
+function renderTable(sched,wk,wd,cd,merged){
+  var wrap=h("div",{className:"sw"});
+  var swHead=h("div",{className:"sw-hd"});
+  swHead.appendChild(h("div",{},"▪ 주간 근무표"));
+  if(sched&&sched.length>1){
+    var btnRow=h("div",{style:"display:flex;gap:6px"});
+    var previewBtn=h("div",{style:"font-size:11px;color:#ffd93d;font-weight:700;cursor:pointer;padding:4px 10px;border:1px solid #ffd93d44;border-radius:8px;background:#ffd93d11"},"👁 미리보기");
+    previewBtn.onclick=function(){showPreview(sched,wk,wd,merged);};
+    var copyBtn=h("div",{style:"font-size:11px;color:#4a9eff;font-weight:700;cursor:pointer;padding:4px 10px;border:1px solid #4a9eff44;border-radius:8px;background:#4a9eff11"},"📋 내일 복사");
+    copyBtn.onclick=function(){copyTomorrow(sched,wk,wd,merged,copyBtn);};
+    btnRow.appendChild(previewBtn);btnRow.appendChild(copyBtn);
+    swHead.appendChild(btnRow);
+  }
+  wrap.appendChild(swHead);
+  var tw=h("div",{className:"tw"});
+  var tbl=document.createElement("table");
+  var thead=document.createElement("thead");
+  var tr=document.createElement("tr");
+  tr.appendChild(h("th",{className:"site-th"},"현장"));
+  wk.forEach(function(day,idx){
+    var isWe=day==="토"||day==="일";
+    var th=document.createElement("th");
+    var exC=Object.keys(merged[idx]||{}).length;
+    var inner="<div style='color:"+(isWe?"#ff6b6b":"#aaa")+";font-weight:900;font-size:13px'>"+day+"</div>";
+    inner+="<div style='color:#444;font-size:9px'>"+wd[idx]+"</div>";
+    inner+="<div style='font-size:9px;font-weight:700;color:"+(cd[idx]?"#4a9eff":"#ff6b6b")+"'>"+(cd[idx]?"차O":"차X")+"</div>";
+    if(exC>0)inner+="<div style='font-size:9px;color:#ff9f7f;font-weight:700'>제외"+exC+"</div>";
+    th.innerHTML=inner;
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr);tbl.appendChild(thead);
+  var tbody=document.createElement("tbody");
+  SITES.forEach(function(site){
+    var row=document.createElement("tr");
+    var tdl=h("td",{className:"site-td",style:"color:"+site.color},site.label);
+    row.appendChild(tdl);
+    sched.forEach(function(day,idx){
+      var bg=idx%2===0?"#0f0f1a":"#111120";
+      var td=document.createElement("td");
+      td.style.background=bg;td.style.borderTop="1px solid #ffffff08";
+      if(site.key==="excl"){
+        var entries=Object.entries(day.excl||{});
+        if(entries.length===0){td.innerHTML="<span style='color:#2a2a3a'>-</span>";}
+        else{var html="";entries.forEach(function(pair){var t=pair[1];html+="<span style='display:block;font-size:10px;line-height:1.8;color:"+(t==="결근"?"#ff6b6b":"#ffd93d")+";font-weight:700'>"+toNum(pair[0])+(t==="결근"?"결":"휴")+"</span>";});td.innerHTML=html;}
+        row.appendChild(td);return;
+      }
+      if(day.isSun){
+        if(site.key==="sunw"){var m=day.sunw||[];td.style.color="#ffd93d";td.innerHTML=m.map(toNum).join(" ")||"-";}
+        else if(site.key==="rest"){var m=day.rest||[];td.style.color="#888";td.innerHTML=m.length>0?m.map(toNum).join(" "):"-";}
+        else if(site.key==="bib"){var m=day.bib||[];td.style.color="#cccc55";td.innerHTML=m.length>0?m.map(toNum).join(" "):"-";}
+        else{td.innerHTML="<span style='color:#2a2a3a'>-</span>";}
+        row.appendChild(td);return;
+      }
+      var isEmpty=(site.key==="yac"&&!day.hasCar)||(site.key==="rest"&&day.hasCar)||(site.key==="sunw"&&!day.isSun);
+      var members=day[site.key]||[];
+      if(isEmpty||members.length===0){td.innerHTML="<span style='color:#2a2a3a'>-</span>";}
+      else{
+        td.style.color=site.color;
+        var html="";
+        members.forEach(function(n){var num=toNum(n);if(state.myName&&n===state.myName)html+="<span class='hl'>"+num+"</span> ";else html+=num+" ";});
+        td.innerHTML=html.trim();
+      }
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  });
+  tbl.appendChild(tbody);tw.appendChild(tbl);wrap.appendChild(tw);
+  var ref=h("div",{className:"ref-wrap"});
+  ref.appendChild(h("div",{className:"ref-title"},"▪ 번호 참고"));
+  var rg=h("div",{className:"ref-grid"});
+  WORKERS.forEach(function(name,i){var item=document.createElement("div");item.className="ref-item";item.innerHTML="<span class='ref-num'>"+(i+1)+"</span> "+name;rg.appendChild(item);});
+  ref.appendChild(rg);wrap.appendChild(ref);
+  return wrap;
+}
+
+function renderMySchedule(sched,wk,wd,dateObjs){
+  var name=state.myName;
+  var card=h("div",{className:"my-card"});
+  card.appendChild(h("div",{className:"my-title"},"▪ "+name+" · 내 주간 근무"));
+  var rows=h("div",{className:"my-row"});
+  var LABELS={dae:"대양",sun:"성우",yac:"야차",jay:"제이",jad:"자동차",rest:"비번",bib:"비번",sunw:"일요근무"};
+  var COLORS={dae:"#4a9eff",sun:"#6effb4",yac:"#ffd93d",jay:"#ff9f7f",jad:"#88cc88",rest:"#888",bib:"#cccc55",sunw:"#ffd93d"};
+  sched.forEach(function(day,idx){
+    var site="",color="#aaa",pos=0;
+    if(day.isSun){
+      if((day.sunw||[]).indexOf(name)>=0){pos=(day.sunw||[]).indexOf(name)+1;site="일요근무("+pos+"번)";color="#ffd93d";}
+      else if((day.bib||[]).indexOf(name)>=0){site="비번";color="#cccc55";}
+      else if((day.rest||[]).indexOf(name)>=0){site="비번";color="#888";}
+      else site="휴가";
+    } else {
+      var NOPOS=["jad","rest","bib"];
+      var keys=["dae","sun","yac","jay","jad","bib","rest"];
+      for(var ki=0;ki<keys.length;ki++){var k=keys[ki],arr=day[k]||[];if(arr.indexOf(name)>=0){pos=arr.indexOf(name)+1;site=NOPOS.indexOf(k)>=0?LABELS[k]:LABELS[k]+"("+pos+"번)";color=COLORS[k];break;}}
+      if(!site){
+        // 원래 씨월드 휴가자 vs 땜빵 구분
+        var isOrigSw=SEAWORLD_SCHEDULE.some(function(v){return v.name===name&&dateObjs[idx]>=new Date(v.start+"T00:00:00")&&dateObjs[idx]<=new Date(v.end+"T00:00:00");});
+        var isOrigVac=VACATION_SCHEDULE.some(function(v){return v.name===name&&dateObjs[idx]>=new Date(v.start+"T00:00:00")&&dateObjs[idx]<=new Date(v.end+"T00:00:00");});
+        if(isOrigSw||isOrigVac){site="휴가";color="#ffd93d";}
+        else{site="씨월드 근무";color="#88eeff";}
+      }
+    }
+    var isWe=wk[idx]==="토"||wk[idx]==="일";
+    var item=h("div",{className:"my-item"});
+    var dayEl=h("div",{className:"my-day",style:"color:"+(isWe?"#ff6b6b":"#aaa")});
+    dayEl.innerHTML=wk[idx]+"<br><span style='font-size:9px;color:#444'>"+wd[idx]+"</span>";
+    item.appendChild(dayEl);
+    item.appendChild(h("div",{className:"my-site",style:"color:"+color},site));
+    rows.appendChild(item);
+  });
+  card.appendChild(rows);return card;
+}
+
+function formatNames(label,names){
+  if(!names||names.length===0)return "";
+  var labels={"대양":"대양","성우":"성우","오선":"오선","씨월드":"씨월드","C":"  C","휴가":"휴가","결근":"결근","차":"  차","일요근무":"일요근무"};
+  var lb=(labels[label]||label)+", ";
+  var pad="";for(var p=0;p<lb.length;p++)pad+=" ";
+  var line="";
+  for(var i=0;i<names.length;i+=4){var chunk=names.slice(i,i+4);if(i===0)line+=lb+chunk.join(", ")+"\n";else line+=pad+chunk.join(", ")+"\n";}
+  return line;
+}
+
+function makeTomorrowText(sched,wk,wd,merged){
+  var tomorrow=sched[1];
+  var tIdx=1;
+  var dateStr=wd[tIdx].replace(".","/").replace(/^0/,"")+" "+wk[tIdx];
+  var line=dateStr+"\n";
+  var tomorrowMerged=merged[1]||{};
+  var vacNames=Object.keys(tomorrowMerged).filter(function(k){return tomorrowMerged[k]==="휴가";});
+  var absNames=Object.keys(tomorrowMerged).filter(function(k){return tomorrowMerged[k]==="결근";});
+  var seaworldFixed=["정태경"];
+  if(tomorrow.hasCar){
+    line+=formatNames("대양",tomorrow.dae);
+    line+=formatNames("성우",tomorrow.sun);
+    line+=formatNames("차",tomorrow.yac);
+    line+=formatNames("오선",tomorrow.jay);
+    line+=formatNames("차",tomorrow.jad);
+  } else if(tomorrow.isSun){
+    line+=formatNames("일요근무",tomorrow.sunw);
+  } else {
+    line+=formatNames("대양",tomorrow.dae);
+    line+=formatNames("성우",tomorrow.sun);
+    line+=formatNames("오선",tomorrow.jay);
+  }
+  line+=formatNames("C",seaworldFixed);
+  line+=formatNames("휴가",vacNames);
+  line+=formatNames("결근",absNames);
+  return line.trim();
+}
+
+function makeTodayText(sched,wk,wd,merged){
+  var today=sched[0];
+  var todayMerged=merged[0]||{};
+  var vacNames=Object.keys(todayMerged).filter(function(k){return todayMerged[k]==="휴가";});
+  var absNames=Object.keys(todayMerged).filter(function(k){return todayMerged[k]==="결근";});
+  var swNames=Object.keys(todayMerged).filter(function(k){return todayMerged[k]==="씨월드";});
+  var line=wd[0].replace(".","/").replace(/^0/,"")+" "+wk[0]+" (오늘)\n";
+  if(today.hasCar){
+    line+=formatNames("대양",today.dae);
+    line+=formatNames("성우",today.sun);
+    line+=formatNames("차",today.yac);
+    line+=formatNames("오선",today.jay);
+    line+=formatNames("차",today.jad);
+  } else {
+    line+=formatNames("대양",today.dae);
+    line+=formatNames("성우",today.sun);
+    line+=formatNames("오선",today.jay);
+  }
+  if(swNames.length>0)line+=formatNames("휴가",swNames);
+  if(vacNames.length>0)line+=formatNames("휴가",vacNames);
+  if(absNames.length>0)line+=formatNames("결근",absNames);
+  return line.trim();
+}
+
+function showPreview(sched,wk,wd,merged){
+  var text=makeTomorrowText(sched,wk,wd,merged);
+  var todayText=makeTodayText(sched,wk,wd,merged);
+  var pbg=h("div",{style:"position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:300;display:flex;align-items:flex-end;justify-content:center"});
+  pbg.onclick=function(){document.body.removeChild(pbg);};
+  var pinner=h("div",{style:"background:#13132a;border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto"});
+  pinner.onclick=function(e){e.stopPropagation();};
+  var phead=h("div",{style:"display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"});
+  phead.appendChild(h("div",{style:"font-size:14px;font-weight:900;color:#fff"},"📋 내일 근무 미리보기"));
+  var pclose=h("div",{style:"color:#555;font-size:20px;cursor:pointer"},"✕");
+  pclose.onclick=function(){document.body.removeChild(pbg);};
+  phead.appendChild(pclose);pinner.appendChild(phead);
+  pinner.appendChild(h("div",{style:"font-size:10px;color:#666;font-weight:700;letter-spacing:2px;margin-bottom:6px"},"▪ 오늘 근무"));
+  pinner.appendChild(h("div",{style:"background:#0d0d1a;border-radius:10px;padding:12px;font-size:12px;line-height:1.9;color:#888;white-space:pre-wrap;margin-bottom:14px"},todayText));
+  pinner.appendChild(h("div",{style:"font-size:10px;color:#4a9eff88;font-weight:700;letter-spacing:2px;margin-bottom:6px"},"▪ 내일 근무 (카톡 발송용)"));
+  pinner.appendChild(h("div",{style:"background:#0d0d1a;border-radius:10px;padding:14px;font-size:13px;line-height:2;color:#e0e0f0;white-space:pre-wrap;margin-bottom:16px"},text));
+  var cbtn=h("div",{style:"background:#4a9eff;color:#fff;font-size:14px;font-weight:700;border-radius:12px;padding:12px;text-align:center;cursor:pointer"},"📋 복사하기");
+  cbtn.onclick=function(){
+    if(navigator.clipboard){navigator.clipboard.writeText(text).then(function(){cbtn.textContent="✅ 복사됨!";setTimeout(function(){document.body.removeChild(pbg);},1000);});}
+    else{var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);cbtn.textContent="✅ 복사됨!";setTimeout(function(){document.body.removeChild(pbg);},1000);}
+  };
+  pinner.appendChild(cbtn);pbg.appendChild(pinner);document.body.appendChild(pbg);
+}
+
+function copyTomorrow(sched,wk,wd,merged,btn){
+  var text=makeTomorrowText(sched,wk,wd,merged);
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(function(){btn.textContent="✅ 복사됨!";setTimeout(function(){btn.textContent="📋 내일 복사";},2000);});}
+  else{var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);btn.textContent="✅ 복사됨!";setTimeout(function(){btn.textContent="📋 내일 복사";},2000);}
+}
+
+function renderPopup(idx,wk,wd,merged,dayExcl){
+  var bg=h("div",{className:"pbg"});
+  bg.onclick=function(){setState({popupDay:null});};
+  var inner=h("div",{className:"pinner"});
+  inner.onclick=function(e){e.stopPropagation();};
+  var phead=h("div",{className:"phead"});
+  var ptitle=document.createElement("div");
+  ptitle.innerHTML="<span class='pday'>"+wk[idx]+"요일</span><span class='pdate'>"+wd[idx]+"</span>";
+  var pclose=h("div",{className:"pclose"},"✕");
+  pclose.onclick=function(){setState({popupDay:null});};
+  phead.appendChild(ptitle);phead.appendChild(pclose);
+  inner.appendChild(phead);
+  inner.appendChild(h("div",{className:"phint"},"▪ 제외 인원 (탭: 없음→결근→씨월드→자동차→없음)"));
+  var grid=h("div",{className:"grid4"});
+  WORKERS.forEach(function(name){
+    var manual=(dayExcl[idx]||{})[name];
+    var isAuto=!manual&&!!(merged[idx]||{})[name];
+    var btnCls="eb"+(manual==="결근"?" absent":manual==="씨월드"?" seaworld":manual==="자동차"?" jad":isAuto?" autovac":"");
+    var nameCls="en"+(manual==="결근"?" absent":manual==="씨월드"?" seaworld":manual==="자동차"?" jad":isAuto?" autovac":"");
+    var showType=manual||(isAuto?(merged[idx]||{})[name]+"(자동)":"");
+    var btn2=h("div",{className:btnCls});
+    btn2.appendChild(h("div",{className:nameCls},name));
+    if(showType){btn2.appendChild(h("div",{className:"et "+(manual==="결근"?"absent":manual==="씨월드"?"seaworld":manual==="자동차"?"jad":"vacation")},showType));}
+    (function(n){btn2.onclick=function(){toggleExcl(idx,n);};})(name);
+    grid.appendChild(btn2);
+  });
+  inner.appendChild(grid);bg.appendChild(inner);return bg;
+}
+
+function renderVacPopup(){
+  var today=new Date();today.setHours(0,0,0,0);
+  var bg=h("div",{className:"pbg"});
+  bg.onclick=function(){setState({vacPopup:false});};
+  var inner=h("div",{className:"pinner"});
+  inner.onclick=function(e){e.stopPropagation();};
+  var phead=h("div",{className:"phead"});
+  var ptitle=h("div",{className:"pday"},"📋 연간 휴가 리스트");
+  var pclose=h("div",{className:"pclose"},"✕");
+  pclose.onclick=function(){setState({vacPopup:false});};
+  phead.appendChild(ptitle);phead.appendChild(pclose);
+  inner.appendChild(phead);
+  var allVac=VACATION_SCHEDULE.map(function(v){return Object.assign({},v,{isSeaworld:false});})
+    .concat(SEAWORLD_SCHEDULE.map(function(v){return Object.assign({},v,{isSeaworld:true});}));
+  allVac.sort(function(a,b){return a.start>b.start?1:a.start<b.start?-1:0;});
+  allVac.forEach(function(v){
+    var s=new Date(v.start+"T00:00:00"),e=new Date(v.end+"T00:00:00");
+    var isActive=today>=s&&today<=e,isPast=today>e;
+    var color=isActive?(v.isSeaworld?"#88eeff":"#ffd93d"):isPast?"#444":"#aaa";
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff08";
+    var nameEl=document.createElement("div");
+    nameEl.style.cssText="min-width:80px;font-size:13px;font-weight:700;color:"+color;
+    nameEl.textContent=v.name;
+    if(isActive){var badge=document.createElement("span");badge.style.cssText="font-size:9px;background:"+(v.isSeaworld?"#88eeff33":"#ffd93d33")+";color:"+(v.isSeaworld?"#88eeff":"#ffd93d")+";border-radius:4px;padding:1px 5px;margin-left:6px";badge.textContent="휴가중";nameEl.appendChild(badge);}
+    var dateEl=document.createElement("div");
+    dateEl.style.cssText="font-size:11px;color:"+(isPast?"#444":"#888")+";margin-left:8px";
+    dateEl.textContent=fmtVacDate(v.start)+" ~ "+fmtVacDate(v.end);
+    row.appendChild(nameEl);row.appendChild(dateEl);inner.appendChild(row);
+  });
+  bg.appendChild(inner);return bg;
+}
+
+function renderSettings(){
+  var s=state.settings;
+  var bg=h("div",{className:"settings-bg"});
+  bg.onclick=function(){setState({settingsOpen:false});};
+  var inner=h("div",{className:"settings-inner"});
+  inner.onclick=function(e){e.stopPropagation();};
+  var head=h("div",{className:"settings-head"});
+  head.appendChild(h("div",{className:"settings-title"},"⚙️ 설정"));
+  var cls=h("div",{className:"settings-close"},"✕");
+  cls.onclick=function(){setState({settingsOpen:false});};
+  head.appendChild(cls);inner.appendChild(head);
+  var sec1=h("div",{className:"settings-section"});
+  sec1.appendChild(h("div",{className:"settings-label"},"▪ 폰트"));
+  var opts1=h("div",{className:"settings-options"});
+  [{v:"system",l:"시스템"},{v:"noto",l:"Noto Sans"},{v:"nanum",l:"나눔고딕"}].forEach(function(opt){
+    var btn=h("div",{className:"settings-opt"+(s.font===opt.v?" active":"")},opt.l);
+    btn.onclick=function(){setState({settings:Object.assign({},state.settings,{font:opt.v})});};
+    opts1.appendChild(btn);
+  });
+  sec1.appendChild(opts1);inner.appendChild(sec1);
+  var sec2=h("div",{className:"settings-section"});
+  sec2.appendChild(h("div",{className:"settings-label"},"▪ 글씨 크기"));
+  var sizeMap=[10,11,12,13,14,15,16];
+  var sizeRow=h("div",{style:"display:flex;align-items:center;gap:12px"});
+  var btnMinus=h("div",{className:"settings-opt",style:"font-size:18px;padding:6px 16px;font-weight:900"},"-");
+  btnMinus.onclick=function(){setState({settings:Object.assign({},state.settings,{size:Math.max(0,state.settings.size-1)})});};
+  var sizeVal=h("div",{style:"font-size:15px;font-weight:700;color:#fff;min-width:40px;text-align:center"},sizeMap[s.size]+"px");
+  var btnPlus=h("div",{className:"settings-opt",style:"font-size:18px;padding:6px 16px;font-weight:900"},"+");
+  btnPlus.onclick=function(){setState({settings:Object.assign({},state.settings,{size:Math.min(6,state.settings.size+1)})});};
+  sizeRow.appendChild(btnMinus);sizeRow.appendChild(sizeVal);sizeRow.appendChild(btnPlus);
+  sec2.appendChild(sizeRow);inner.appendChild(sec2);
+  bg.appendChild(inner);return bg;
+}
+
+function selectMyName(name){var newName=state.myName===name?"":name;localStorage.setItem('myName',newName);setState({myName:newName});}
+function selectFirstWorker(name){
+  var isDesel=state.firstWorker===name;
+  var newName=isDesel?"":name;
+  if(!isDesel&&name){
+    var today=new Date().toDateString();
+    var hist=state.history.filter(function(h){return h.date!==today;});
+    hist.unshift({date:today,name:name});
+    if(hist.length>2)hist=hist.slice(0,2);
+    localStorage.setItem('dayHistory',JSON.stringify(hist));
+    localStorage.setItem('firstWorker',JSON.stringify({date:today,name:newName}));
+    saveFirstWorker(newName);
+    setState({firstWorker:newName,history:hist});
+  } else {
+    localStorage.setItem('firstWorker',JSON.stringify({date:new Date().toDateString(),name:newName}));
+    saveFirstWorker(newName);
+    setState({firstWorker:newName});
+  }
+}
+// 선박 실시간 추적
+var vesselWS=null;
+var vesselMap=null;
+var vesselMarker=null;
+
+function openVesselPopup(){
+  setState({vesselPopup:true,vesselData:null});
+}
+
+function closeVesselPopup(){
+  if(vesselWS){vesselWS.close();vesselWS=null;}
+  if(vesselMap){vesselMap.remove();vesselMap=null;vesselMarker=null;}
+  setState({vesselPopup:false,vesselData:null});
+}
+
+function loadLeaflet(cb){
+  if(window.L){cb();return;}
+  var link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+  var script=document.createElement('script');
+  script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload=cb;
+  document.head.appendChild(script);
+}
+
+function startVesselTracking(){
+  if(vesselWS)return;
+  var API_KEY='4ea1dfb392d9329ddc6b979a55e80d5f2077b20c';
+  var MMSI='440925000';
+
+  try{
+    vesselWS=new WebSocket('wss://stream.aisstream.io/v0/stream');
+    vesselWS.onopen=function(){
+      vesselWS.send(JSON.stringify({
+        APIKey:API_KEY,
+        BoundingBoxes:[[[-90,-180],[90,180]]],
+        FilterMessageTypes:['PositionReport'],
+        FiltersShipMMSI:[MMSI]
+      }));
+      setState({vesselData:{status:'연결중... 선박 신호 대기'}});
+    };
+    vesselWS.onmessage=function(e){
+      try{
+        var msg=JSON.parse(e.data);
+        var pos=msg.Message&&msg.Message.PositionReport;
+        if(!pos)return;
+        var lat=pos.Latitude,lon=pos.Longitude;
+        var sog=pos.Sog||0,cog=pos.Cog||0;
+        var dest=(msg.MetaData&&msg.MetaData.Destination)||'-';
+        var data={
+          lat:lat,lon:lon,
+          speed:sog.toFixed(1),
+          course:Math.round(cog),
+          destination:dest.trim()||'-',
+          status:'실시간',
+          updated:new Date().toLocaleTimeString('ko-KR')
+        };
+        setState({vesselData:data});
+        updateVesselMap(lat,lon);
+      }catch(err){console.log('msg err',err);}
+    };
+    vesselWS.onerror=function(e){
+      console.log('ws error',e);
+      setState({vesselData:{status:'연결 오류 - 재시도중'}});
+      vesselWS=null;
+      setTimeout(startVesselTracking,3000);
+    };
+    vesselWS.onclose=function(){
+      if(state.vesselPopup)setState({vesselData:Object.assign({},state.vesselData||{},{status:'연결 끊김'})});
+      vesselWS=null;
+    };
+  }catch(e){
+    console.log('ws init error',e);
+    setState({vesselData:{status:'WebSocket 오류: '+e.message}});
+  }
+}
+
+function updateVesselMap(lat,lon){
+  if(!vesselMap){
+    loadLeaflet(function(){
+    setTimeout(function(){
+      var mapEl=document.getElementById('vessel-map');
+      if(!mapEl)return;
+      vesselMap=L.map('vessel-map').setView([lat,lon],10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        attribution:'© OSM',maxZoom:18
+      }).addTo(vesselMap);
+      var icon=L.divIcon({
+        html:'<div style="font-size:24px">🚢</div>',
+        iconSize:[30,30],iconAnchor:[15,15],className:''
+      });
+      vesselMarker=L.marker([lat,lon],{icon:icon}).addTo(vesselMap);
+      vesselMarker.bindPopup('SUNGWOO JEJU').openPopup();
+    },100);
+    });
+  } else {
+    vesselMarker.setLatLng([lat,lon]);
+    vesselMap.setView([lat,lon],vesselMap.getZoom());
+  }
+}
+
+function renderVesselPopup(){
+  var bg=document.createElement('div');
+  bg.className='vessel-popup-bg';
+  var inner=document.createElement('div');
+  inner.className='vessel-popup';
+  inner.onclick=function(e){e.stopPropagation();};
+
+  var head=document.createElement('div');
+  head.className='vessel-head';
+  var title=document.createElement('div');
+  title.className='vessel-title';
+  title.textContent='🚢 SUNGWOO JEJU 실시간 추적';
+  var cls=document.createElement('div');
+  cls.className='vessel-close';
+  cls.textContent='✕';
+  cls.onclick=closeVesselPopup;
+  head.appendChild(title);head.appendChild(cls);
+  inner.appendChild(head);
+
+  var vd=state.vesselData;
+  if(vd&&vd.lat){
+    var info=document.createElement('div');
+    info.className='vessel-info';
+    [{l:'위도',v:vd.lat.toFixed(4)+'°'},{l:'경도',v:vd.lon.toFixed(4)+'°'},
+     {l:'속도',v:vd.speed+' kts'},{l:'방향',v:vd.course+'°'},
+     {l:'목적지',v:vd.destination},{l:'갱신',v:vd.updated}
+    ].forEach(function(item){
+      var d=document.createElement('div');d.className='vessel-info-item';
+      d.innerHTML='<div>'+item.l+'</div><div class="vessel-info-val">'+item.v+'</div>';
+      info.appendChild(d);
+    });
+    inner.appendChild(info);
+  }
+
+  var status=document.createElement('div');
+  status.className='vessel-status';
+  status.textContent=vd?(vd.status||'대기중'):'연결 준비중...';
+  inner.appendChild(status);
+
+  var mapDiv=document.createElement('div');
+  mapDiv.id='vessel-map';
+  inner.appendChild(mapDiv);
+
+  bg.appendChild(inner);
+
+  // 팝업 열리면 추적 시작
+  setTimeout(startVesselTracking,200);
+  return bg;
+}
+
+function toggleCar(idx,val){
+  if(state.weekDays[idx]==="일")return;
+  var k=dateKey(state.weekDateObjs[idx]);
+  var cur=state.carDays[k];
+  var map=Object.assign({},state.carDays);
+  map[k]=(cur===val)?null:val;
+  localStorage.setItem('carPlan',JSON.stringify(map));
+  if(isAdmin())saveCarDays(map);
+  setState({carDays:map});
+}
+function toggleExcl(idx,name){
+  var k=dateKey(state.weekDateObjs[idx]);
+  var map=Object.assign({},state.dayExcludes);
+  var dayMap=Object.assign({},map[k]||{});
+  var cur=dayMap[name];
+  if(!cur)dayMap[name]="결근";
+  else if(cur==="결근")dayMap[name]="씨월드";
+  else if(cur==="씨월드")dayMap[name]="자동차";
+  else delete dayMap[name];
+  map[k]=dayMap;
+  localStorage.setItem('dayExcludes',JSON.stringify(map));
+  saveDayExcludes(map);
+  setState({dayExcludes:map});
+}
+
+// 앱 시작 - Firebase 동기화 후 렌더
+syncFromFirebase(function(){
+  startFbListener();
+});
+</script>
+</body>
+</html>
