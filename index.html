@@ -368,7 +368,7 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
           while(sun.length<4&&jayFill.length>0)sun.push(jayFill.shift());
         }
         if(sun.length<4){var rFill2=pickFwd(4-sun.length,cursor,exclWithBib.concat(dae).concat(sun));sun=sun.concat(rFill2.team);cursor=rFill2.next;}
-        var pj=result[d-1].jay.filter(function(w){return exclWithBib.indexOf(w)<0;});
+        var pj=result[d-1].jay.filter(function(w){return exclWithBib.indexOf(w)<0&&sun.indexOf(w)<0;});
         var r1=pickFwd(6-pj.length,cursor,exclWithBib.concat(dae).concat(sun));yac=pj.concat(r1.team);cursor=r1.next;
         var r2=pickFwd(4,cursor,exclWithBib.concat(dae).concat(sun).concat(yac));jay=r2.team;cursor=r2.next;
       }
@@ -592,7 +592,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v5.4</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v5.5</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
