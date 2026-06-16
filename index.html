@@ -255,9 +255,9 @@ var SEAWORLD_SCHEDULE=[
 ];
 
 function getStartOffset(monStart){return(monStart&&new Date().getDay()===0)?1:0;}
-function getWeekDates(monStart){var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<7;i++){var d=new Date(t);d.setDate(t.getDate()+off+i);r.push(pad(d.getMonth()+1)+"."+pad(d.getDate()));}return r;}
-function getWeekDays(monStart){var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<7;i++){var d=new Date(t);d.setDate(t.getDate()+off+i);r.push(KR[d.getDay()]);}return r;}
-function getWeekDateObjs(monStart){var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<7;i++){var d=new Date(t);d.setDate(t.getDate()+off+i);d.setHours(0,0,0,0);r.push(d);}return r;}
+function getWeekDates(monStart,weekOffset){weekOffset=weekOffset||0;var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<7;i++){var d=new Date(t);d.setDate(t.getDate()+off+weekOffset*7+i);r.push(pad(d.getMonth()+1)+"."+pad(d.getDate()));}return r;}
+function getWeekDays(monStart,weekOffset){weekOffset=weekOffset||0;var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<7;i++){var d=new Date(t);d.setDate(t.getDate()+off+weekOffset*7+i);r.push(KR[d.getDay()]);}return r;}
+function getWeekDateObjs(monStart,weekOffset){weekOffset=weekOffset||0;var off=getStartOffset(monStart),t=new Date(),r=[];for(var i=0;i<7;i++){var d=new Date(t);d.setDate(t.getDate()+off+weekOffset*7+i);d.setHours(0,0,0,0);r.push(d);}return r;}
 function pad(n){return n<10?"0"+n:""+n;}
 function dateKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function fmtToday(){var t=new Date();return t.getFullYear()+"."+pad(t.getMonth()+1)+"."+pad(t.getDate());}
@@ -494,12 +494,13 @@ var state={
   history:(function(){try{return JSON.parse(localStorage.getItem('dayHistory')||'[]');}catch(e){return[];}})(),
   settings:{font:"system",size:4,skin:"dark"},
   monStart:localStorage.getItem('monStart')==='true',
+  weekOffset:0,
   popupDay:null,vacPopup:false,settingsOpen:false,
   myNameOpen:localStorage.getItem('myNameOpen')!=='false',
   d1Open:localStorage.getItem('d1Open')==='true',
-  weekDates:getWeekDates(localStorage.getItem('monStart')==='true'),
-  weekDays:getWeekDays(localStorage.getItem('monStart')==='true'),
-  weekDateObjs:getWeekDateObjs(localStorage.getItem('monStart')==='true')
+  weekDates:getWeekDates(localStorage.getItem('monStart')==='true',0),
+  weekDays:getWeekDays(localStorage.getItem('monStart')==='true',0),
+  weekDateObjs:getWeekDateObjs(localStorage.getItem('monStart')==='true',0)
 };
 
 function setState(patch){for(var k in patch)state[k]=patch[k];render();}
@@ -566,9 +567,16 @@ function render(){
     var v=!state.monStart;
     localStorage.setItem('monStart',String(v));
     var newWk=getWeekDays(v);
-    setState({monStart:v,weekDates:getWeekDates(v),weekDays:newWk,weekDateObjs:getWeekDateObjs(v)});
+    setState({monStart:v,weekDates:getWeekDates(v,state.weekOffset),weekDays:newWk,weekDateObjs:getWeekDateObjs(v,state.weekOffset)});
   };
   topBtnGroup.appendChild(monStartBtn);
+
+  var weekBtn=h("div",{className:"sync-btn",style:"background:"+(state.weekOffset>0?"#ff6b6b22":"#4a9eff22")+";border-color:"+(state.weekOffset>0?"#ff6b6b44":"#4a9eff44")+";color:"+(state.weekOffset>0?"#ff6b6b":"#4a9eff")},state.weekOffset>0?"📅 이번주":"📅 다음주");
+  weekBtn.onclick=function(){
+    var v=state.weekOffset>0?0:1;
+    setState({weekOffset:v,weekDates:getWeekDates(state.monStart,v),weekDays:getWeekDays(state.monStart,v),weekDateObjs:getWeekDateObjs(state.monStart,v)});
+  };
+  topBtnGroup.appendChild(weekBtn);
   app.appendChild(topBtnGroup);
 
   // 설정/자물쇠 버튼 - topBtnGroup 이후에 추가해야 DOM상 위에 렌더링
@@ -592,7 +600,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v5.5</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v5.6</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
