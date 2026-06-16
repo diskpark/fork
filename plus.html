@@ -528,7 +528,7 @@ function render(){
     var k=dateKey(d);
     if(wk[i]==="일")return false;
     var v=state.carDays[k];
-    return(v===true||v===false)?v:null;
+    return(v===true||v===false)?v:false;
   });
   var dayExcl=dateObjs.map(function(d){
     return state.dayExcludes[dateKey(d)]||{};
@@ -536,7 +536,7 @@ function render(){
   var sc=state.sundayCount;
   var autoVac=getAutoVac(state.weekDateObjs);
   var merged=dayExcl.map(function(m,i){var r=Object.assign({},autoVac[i]);if(m&&typeof m==='object')Object.keys(m).forEach(function(k){r[k]=m[k];});return r;});
-  var allSel=cd.every(function(c){return c!==null;});
+  var allSel=true;
   var sched=(state.firstWorker&&allSel)?calcSchedule(cd,merged,state.firstWorker,sc,wk,dateObjs):null;
 
   var app=document.getElementById("app");
