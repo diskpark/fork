@@ -1300,8 +1300,8 @@ function toggleExcl(idx,name){
   setState({dayExcludes:map});
 }
 
-// 앱 시작 - Firebase 동기화 후 렌더
-syncFromFirebase(function(){startFbListener();});
+// 앱 시작 - Firebase 동기화 시도, 실패해도 렌더
+try{syncFromFirebase(function(){startFbListener();});}catch(e){render();}
 </script>
 </body>
 </html>
