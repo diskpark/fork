@@ -265,7 +265,7 @@ function fmtVacDate(s){var d=new Date(s+"T00:00:00");return(d.getMonth()+1)+"/"+
 function toNum(name){return WORKERS.indexOf(name)+1;}
 
 function getAutoVac(dateObjs){
-  var r=[];for(var i=0;i<7;i++){r.push({});}
+  var r=[];for(var i=0;i<dateObjs.length;i++){r.push({});}
   // 씨월드 땜빵: dayExcludes에서 씨월드로 지정된 인원 찾기
   var swSubs={};
   dateObjs.forEach(function(cur){
