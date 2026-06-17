@@ -1301,9 +1301,7 @@ function toggleExcl(idx,name){
 }
 
 // 앱 시작 - Firebase 동기화 후 렌더
-// plus.html - Firebase 동기화 후 렌더, 실패해도 바로 렌더
 syncFromFirebase(function(){startFbListener();});
-render(); // 동기화 전에도 일단 렌더
 </script>
 </body>
 </html>
