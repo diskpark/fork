@@ -402,8 +402,13 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
         // 일요근무 배정
         // 전날 차있음→차없음: 전날 비번 말번부터 역순
         // 전날 차없음 연속: 전날 대양 1번 앞번호부터 역순
+        // 오늘이 첫날(d=0)이면서 일요일인 경우: 실제 어제 데이터가 없으므로
+        // firstWorker를 내일(월요일) 대양1번 기준으로 사용해 역산
         var li;
-        if(prevCar===false){
+        if(d===0&&prevCar===null){
+          // firstWorker 앞 sundayCount명을 일요근무로 (월요일 대양1번 직전)
+          li=(fi-1+N)%N;
+        } else if(prevCar===false){
           li=(WORKERS.indexOf(prevDae[0])-1+N)%N;
         } else {
           li=WORKERS.indexOf(bib[bib.length-1]);
@@ -411,17 +416,9 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
         var sw=pickRev(sundayCount,li,exclWithBib).team;
         var rest=avail.filter(function(w){return sw.indexOf(w)<0&&bib.indexOf(w)<0;});
         result.push({hasCar:false,dae:[],sun:[],yac:[],jay:[],jad:jadForced,sunw:sw,bib:bib,rest:rest,excl:exclMap,isSun:true});
-        var bibForNext=sw.slice();
-        if(bibForNext.length>6){bibForNext=bibForNext.slice(0,6);}
-        else if(bibForNext.length<6){
-          var cur2=(WORKERS.indexOf(bibForNext[bibForNext.length-1])+1)%N;
-          while(bibForNext.length<6){
-            if(exclAll.indexOf(WORKERS[cur2])<0&&bibForNext.indexOf(WORKERS[cur2])<0)bibForNext.push(WORKERS[cur2]);
-            cur2=(cur2+1)%N;
-          }
-        }
-        cursor=(WORKERS.indexOf(bibForNext[bibForNext.length-1])+1)%N;
-        prevDae=bibForNext;prevSun=[];prevYac=[];prevActBib=sw;
+        cursor=fi; // 월요일은 firstWorker부터 시작
+        prevDae=sw.length>=6?sw.slice(0,6):sw;
+        prevSun=[];prevYac=[];prevActBib=sw;
       } else {
         if(d===0||prevCar===null){
           // 첫날: firstWorker부터 순방향
@@ -582,7 +579,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v6.8</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v6.9</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
