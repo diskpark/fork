@@ -381,8 +381,13 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
         while(exclWithBib.indexOf(WORKERS[nextIdx])>=0||jadExtra.indexOf(WORKERS[nextIdx])>=0){nextIdx=(nextIdx+1)%N;}
         bib.push(WORKERS[nextIdx]);
       });
-      // 휴가 복귀자 순번대로 삽입
-      // vacRet(휴가복귀자)는 exclAll/bib에 없으므로 위 배정 로직(부족분 자동보충)에서 자연스럽게 순번 포함됨
+      // 휴가 복귀자: cursor가 도달하지 못해 빠진 경우 현재 배정 끝에 추가
+      vacRet.forEach(function(ret){
+        if(dae.indexOf(ret)>=0||sun.indexOf(ret)>=0||yac.indexOf(ret)>=0||jay.indexOf(ret)>=0)return;
+        // jay(제이) 끝에 추가하고 cursor를 그 다음으로
+        jay.push(ret);
+        cursor=(WORKERS.indexOf(ret)+1)%N;
+      });
       // vacRet(휴가복귀자)는 exclAll에 없으므로 pickFwd/pickRev가 자동으로 순번 포함
       var assigned=dae.concat(sun,yac,jay,bib);
       var jad=avail.filter(function(w){return assigned.indexOf(w)<0&&vacRet.indexOf(w)<0;});
@@ -577,7 +582,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v6.6</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v6.7</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -885,7 +890,7 @@ function renderMySchedule(sched,wk,wd,dateObjs){
         var isOrigSw=SEAWORLD_SCHEDULE.some(function(v){return v.name===name&&dateObjs[idx]>=new Date(v.start+"T00:00:00")&&dateObjs[idx]<=new Date(v.end+"T00:00:00");});
         var isOrigVac=VACATION_SCHEDULE.some(function(v){return v.name===name&&dateObjs[idx]>=new Date(v.start+"T00:00:00")&&dateObjs[idx]<=new Date(v.end+"T00:00:00");});
         if(isOrigSw||isOrigVac){site="휴가";color="#ffd93d";}
-        else{site="씨월드 근무";color="#88eeff";}
+        else{site="미배정";color="#888";}
       }
     }
     var isWe=wk[idx]==="토"||wk[idx]==="일";
