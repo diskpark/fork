@@ -406,13 +406,20 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
             } else{yac=newYac;}
           } else{sun=newSun;}
         } else{dae=newDae;}
-        // 패널티: 결근복귀자를 현장에서 제거하고 차있으면 자동차, 차없으면 제이 말번
-        if(dae.indexOf(ret)>=0)dae=dae.filter(function(w){return w!==ret;});
-        else if(sun.indexOf(ret)>=0)sun=sun.filter(function(w){return w!==ret;});
-        else if(yac.indexOf(ret)>=0)yac=yac.filter(function(w){return w!==ret;});
-        else if(jay.indexOf(ret)>=0)jay=jay.filter(function(w){return w!==ret;});
+        // 패널티: 결근복귀자를 현장에서 제거 (자리는 유지 - 다음 순번으로 채움)
+        var retSite=null;
+        if(dae.indexOf(ret)>=0){retSite='dae';dae=dae.filter(function(w){return w!==ret;});}
+        else if(sun.indexOf(ret)>=0){retSite='sun';sun=sun.filter(function(w){return w!==ret;});}
+        else if(yac.indexOf(ret)>=0){retSite='yac';yac=yac.filter(function(w){return w!==ret;});}
+        else if(jay.indexOf(ret)>=0){retSite='jay';jay=jay.filter(function(w){return w!==ret;});}
+        // 빈 자리 cursor로 보충
+        var usedAll=dae.concat(sun,yac,jay,bib,jadExtra,vacRetExtra,[ret]);
+        if(retSite==='dae'&&dae.length<6){var rf=pickFwd(1,cursor,exclWithBib.concat(usedAll));if(rf.team.length)dae=sortByNum(dae.concat(rf.team));}
+        else if(retSite==='sun'&&sun.length<4){var rf=pickFwd(1,cursor,exclWithBib.concat(usedAll));if(rf.team.length)sun=sortByNum(sun.concat(rf.team));}
+        else if(retSite==='yac'&&yac.length<6){var rf=pickFwd(1,cursor,exclWithBib.concat(usedAll));if(rf.team.length)yac=sortByNum(yac.concat(rf.team));}
+        else if(retSite==='jay'&&jay.length<4){var rf=pickFwd(1,cursor,exclWithBib.concat(usedAll));if(rf.team.length)jay=sortByNum(jay.concat(rf.team));}
         if(hasCar){jadExtra.push(ret);}
-        else{jay.push(ret);} // 차없으면 제이 말번
+        else{jay.push(ret);}
       });
       // 휴가복귀자: 순번대로 대양에 삽입, 연쇄 밀림 (대양→성우→야차→제이→자동차)
       vacRet.forEach(function(ret){
@@ -631,7 +638,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v7.3</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v7.4</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
