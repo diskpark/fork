@@ -329,11 +329,10 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
     var exclMap=dayExcl[d]||{};
     // 자동차 지정자 분리 - 일반 배정에서 완전히 제외하고 jad에만 강제 배정
     var jadForced=Object.keys(exclMap).filter(function(w){return exclMap[w]==="자동차";});
-    // 결근복귀/휴가복귀는 오늘 배정에 포함시켜야 하므로 excl에서 제외
     var excl=Object.keys(exclMap).filter(function(w){return exclMap[w]!=="자동차"&&exclMap[w]!=="결근복귀"&&exclMap[w]!=="휴가복귀";});
-    var exclAll=excl.concat(jadForced);
+    // 자동차는 exclAll에서 제외 - cursor 진행에 포함되어야 함
+    var exclAll=excl; // jadForced는 포함하지 않음
     var avail=WORKERS.filter(function(w){return exclAll.indexOf(w)<0;});
-    // 비번 = 전날 실제 대양 근무자 그대로
     var bib=prevDae.filter(function(w){return exclAll.indexOf(w)<0;});
     var prevExclMap=d>0?(dayExcl[d-1]||{}):{};
     var prevAutoVac=d>0?getAutoVac([dateObjs[d-1]])[0]:{};
@@ -440,9 +439,21 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
           } else {sun=newSun;}
         } else {dae=newDae;}
       });
-      // vacRet(휴가복귀자)는 exclAll에 없으므로 pickFwd/pickRev가 자동으로 순번 포함
+      // 자동차 지정자를 현장에서 제거하고 jad로 이동, 빈자리 다음순번으로 보충
+      jadForced.forEach(function(w){
+        dae=dae.filter(function(x){return x!==w;});
+        sun=sun.filter(function(x){return x!==w;});
+        yac=yac.filter(function(x){return x!==w;});
+        jay=jay.filter(function(x){return x!==w;});
+      });
+      // 빈자리 보충
+      var usedNow=dae.concat(sun,yac,jay,bib,jadForced);
+      while(dae.length<6){var rf=pickFwd(1,cursor,exclWithBib.concat(usedNow));if(!rf.team.length)break;dae=sortByNum(dae.concat(rf.team));usedNow=usedNow.concat(rf.team);cursor=rf.next;}
+      while(sun.length<4){var rf=pickFwd(1,cursor,exclWithBib.concat(usedNow));if(!rf.team.length)break;sun=sortByNum(sun.concat(rf.team));usedNow=usedNow.concat(rf.team);cursor=rf.next;}
+      while(yac.length<6){var rf=pickFwd(1,cursor,exclWithBib.concat(usedNow));if(!rf.team.length)break;yac=sortByNum(yac.concat(rf.team));usedNow=usedNow.concat(rf.team);cursor=rf.next;}
+      while(jay.length<4){var rf=pickFwd(1,cursor,exclWithBib.concat(usedNow));if(!rf.team.length)break;jay=sortByNum(jay.concat(rf.team));usedNow=usedNow.concat(rf.team);cursor=rf.next;}
       var assigned=dae.concat(sun,yac,jay,bib);
-      var jad=avail.filter(function(w){return assigned.indexOf(w)<0&&vacRet.indexOf(w)<0;});
+      var jad=avail.filter(function(w){return assigned.indexOf(w)<0&&vacRet.indexOf(w)<0&&jadForced.indexOf(w)<0;});
       jadExtra.forEach(function(ret){if(jad.indexOf(ret)<0)jad.push(ret);});
       jadForced.forEach(function(w){if(jad.indexOf(w)<0)jad.push(w);});
       vacRetExtra.forEach(function(w){if(jad.indexOf(w)<0)jad.push(w);});
@@ -632,7 +643,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v8.2</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v8.3</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
