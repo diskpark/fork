@@ -334,15 +334,7 @@ function calcSchedule(carDays,dayExcl,firstWorker,sundayCount,weekDays,dateObjs)
     var exclAll=excl.concat(jadForced);
     var avail=WORKERS.filter(function(w){return exclAll.indexOf(w)<0;});
     // 비번 = 전날 실제 대양 근무자 그대로
-    // 자동차(jadForced)는 이미 exclAll에서 제외됨 → 자동차 지정자는 비번 없음
-    // 오늘 결근/씨월드인 사람만 비번에서 제외
     var bib=prevDae.filter(function(w){return exclAll.indexOf(w)<0;});
-    // 비번 6명 미달 시 전날 성우 순번으로 보충
-    if(bib.length<6&&prevSun.length>0){
-      var sunFill=prevSun.filter(function(w){return exclAll.indexOf(w)<0&&bib.indexOf(w)<0;});
-      var need=6-bib.length;
-      for(var si=0;si<sunFill.length&&bib.length<6;si++)bib.push(sunFill[si]);
-    }
     var prevExclMap=d>0?(dayExcl[d-1]||{}):{};
     var prevAutoVac=d>0?getAutoVac([dateObjs[d-1]])[0]:{};
     var absRet=Object.keys(prevExclMap).filter(function(w){return prevExclMap[w]==="결근"&&exclAll.indexOf(w)<0;});
@@ -640,7 +632,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v8.1</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v8.2</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
