@@ -212,41 +212,65 @@ function showFirstWorkerPopup(idx,dateObj){
   if(!isAdmin()){alert('관리자 모드에서만 설정 가능합니다.');return;}
   var k=dateKey(dateObj);
   var cur=(state.firstWorkerDays||{})[k]||null;
-  var obg=document.createElement('div');
-  obg.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000000bb;z-index:500;overflow-y:auto';
-  var oinner=document.createElement('div');
-  oinner.style.cssText='background:#13132a;border-radius:16px;padding:16px;margin:40px 16px';
-  obg.onclick=function(e){if(e.target===obg)document.body.removeChild(obg);};
-  oinner.appendChild((function(){var t=document.createElement('div');t.style.cssText='font-size:14px;font-weight:900;color:#fff;margin-bottom:12px;text-align:center';t.textContent='대양 1번 선택 ('+k+')';return t;})());
+
+  // 전날 성우1번 찾기
+  var prevSun1='';
+  if(idx>0){
+    var sched=window._lastSched;
+    if(sched&&sched[idx-1]&&sched[idx-1].sun&&sched[idx-1].sun.length>0){
+      prevSun1=sched[idx-1].sun[0];
+    }
+  }
+
+  var overlay=h("div",{style:"position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:400;overflow-y:auto"});
+  var pop=h("div",{className:"popup"});
+  overlay.onclick=function(e){if(e.target===overlay)document.body.removeChild(overlay);};
+
+  var phead=h("div",{className:"phead"});
+  var ptitle=document.createElement("div");
+  ptitle.innerHTML="<span class='pday'>대양 1번 선택</span><span class='pdate'>"+k+"</span>";
+  var pclose=h("div",{className:"pclose"},"✕");
+  pclose.onclick=function(){document.body.removeChild(overlay);};
+  phead.appendChild(ptitle);phead.appendChild(pclose);
+  pop.appendChild(phead);
+
+  // 전날 성우1번 힌트
+  if(prevSun1){
+    pop.appendChild(h("div",{style:"font-size:11px;color:#ffd93d;font-weight:700;letter-spacing:1px;margin-bottom:8px;padding:0 4px"},"💡 전날 성우1번: "+prevSun1+" ("+((WORKERS.indexOf(prevSun1)+1))+"번)"));
+  }
+  pop.appendChild(h("div",{className:"phint"},"▪ 대양 1번 선택 (현재: "+(cur||"미설정")+")"));
+
   // 없음 버튼
-  var btnNull=document.createElement('div');
-  btnNull.style.cssText='padding:10px;margin-bottom:6px;border-radius:8px;text-align:center;font-size:13px;cursor:pointer;background:'+(cur===null?'#ffffff33':'#ffffff11')+';color:'+(cur===null?'#fff':'#aaa')+';border:1px solid '+(cur===null?'#fff':'#333');
-  btnNull.textContent='없음'+(cur===null?' ✓':'');
+  var grid=h("div",{className:"grid4"});
+  var btnNull=h("div",{className:"eb"+(cur===null?" sel":"")});
+  btnNull.appendChild(h("div",{className:"en"},"없음"));
   btnNull.onclick=function(){
     var map=Object.assign({},state.firstWorkerDays||{});
     delete map[k];
     saveFirstWorkerDays(map);
     setState({firstWorkerDays:map});
-    document.body.removeChild(obg);
+    document.body.removeChild(overlay);
   };
-  oinner.appendChild(btnNull);
-  // 팀원 목록
+  grid.appendChild(btnNull);
+
   WORKERS.forEach(function(name,wi){
-    var btn=document.createElement('div');
     var isSel=cur===name;
-    btn.style.cssText='padding:10px;margin-bottom:4px;border-radius:8px;text-align:center;font-size:13px;cursor:pointer;background:'+(isSel?'#4a9eff33':'#ffffff11')+';color:'+(isSel?'#4a9eff':'#ccc')+';border:1px solid '+(isSel?'#4a9eff':'#333');
-    btn.textContent=(wi+1)+'번 '+name+(isSel?' ✓':'');
+    var isPrevSun=name===prevSun1;
+    var btn=h("div",{className:"eb"+(isSel?" sel":"")+(isPrevSun?" my-sel":"")});
+    btn.appendChild(h("div",{className:"en"},name));
+    btn.appendChild(h("div",{className:"et vacation"},(wi+1)+"번"+(isPrevSun?" ★":"")));
     btn.onclick=function(){
       var map=Object.assign({},state.firstWorkerDays||{});
       map[k]=name;
       saveFirstWorkerDays(map);
       setState({firstWorkerDays:map});
-      document.body.removeChild(obg);
+      document.body.removeChild(overlay);
     };
-    oinner.appendChild(btn);
+    grid.appendChild(btn);
   });
-  obg.appendChild(oinner);
-  document.body.appendChild(obg);
+  pop.appendChild(grid);
+  overlay.appendChild(pop);
+  document.body.appendChild(overlay);
 }
 function saveDayExcludes(map){
   if(!isAdmin())return;
@@ -615,6 +639,7 @@ function render(){
   var merged=dayExcl.map(function(m,i){var r=Object.assign({},autoVac[i]);if(m&&typeof m==='object')Object.keys(m).forEach(function(k){r[k]=m[k];});return r;});
   var allSel=cd.every(function(c){return c!==null;});
   var sched=allSel?calcSchedule(cd,merged,state.firstWorkerDays||{},sc,wk,dateObjs):null;
+  window._lastSched=sched;
 
   var app=document.getElementById("app");
   app.innerHTML="";
@@ -670,7 +695,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v8.6</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v8.7</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
