@@ -248,6 +248,7 @@ function showFirstWorkerPopup(idx,dateObj){
   obg.appendChild(oinner);
   document.body.appendChild(obg);
 }
+function saveDayExcludes(map){
   if(!isAdmin())return;
   fetch(FB_URL+'/dayExcludes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(map)});
 }
