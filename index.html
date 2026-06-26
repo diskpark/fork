@@ -208,10 +208,11 @@ function saveFirstWorkerDays(map){
   localStorage.setItem('firstWorkerDays',JSON.stringify(map));
   fetch(FB_URL+'/firstWorkerDays.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(map)});
 }
-function showFirstWorkerPopup(idx,dateObj){
+function showFirstWorkerPopup(idx,dateObj,mergedMap){
   if(!isAdmin()){alert('관리자 모드에서만 설정 가능합니다.');return;}
   var k=dateKey(dateObj);
   var cur=(state.firstWorkerDays||{})[k]||null;
+  var merged=mergedMap||{};
 
   // 전날 성우1번 찾기
   var prevSun1='';
@@ -235,7 +236,9 @@ function showFirstWorkerPopup(idx,dateObj){
   pop.appendChild(phead);
 
   if(prevSun1){
-    pop.appendChild(h("div",{style:"font-size:11px;color:#aaa;margin-bottom:6px;padding:0 4px"},"🟡 전날 성우1번  🔵 현재 선택"));
+    pop.appendChild(h("div",{style:"font-size:11px;color:#aaa;margin-bottom:6px;padding:0 4px"},"🟡 전날 성우1번  🔵 현재 선택  🔴 제외"));
+  } else {
+    pop.appendChild(h("div",{style:"font-size:11px;color:#aaa;margin-bottom:6px;padding:0 4px"},"🔵 현재 선택  🔴 제외"));
   }
   pop.appendChild(h("div",{className:"phint"},"▪ 대양 1번 선택 (현재: "+(cur||"미설정")+")"));
 
@@ -252,12 +255,16 @@ function showFirstWorkerPopup(idx,dateObj){
   };
   grid.appendChild(btnNull);
 
+  var exclMapNow=merged[idx]||{};
   WORKERS.forEach(function(name,wi){
     var isSel=cur===name;
     var isPrevSun=name===prevSun1;
-    var btn=h("div",{className:"eb",style:isSel?"background:#4a9eff33;border:1px solid #4a9eff":isPrevSun?"background:#ffd93d33;border:1px solid #ffd93d":""});
-    btn.appendChild(h("div",{className:"en",style:isSel?"color:#4a9eff":isPrevSun?"color:#ffd93d":""},name));
-    btn.appendChild(h("div",{className:"et vacation"},(wi+1)+"번"));
+    var isExcl=!!(exclMapNow[name]);
+    var bg=isSel?"background:#4a9eff33;border:1px solid #4a9eff":isPrevSun?"background:#ffd93d33;border:1px solid #ffd93d":isExcl?"background:#ff6b6b22;border:1px solid #ff6b6b44":"";
+    var nameColor=isSel?"color:#4a9eff":isPrevSun?"color:#ffd93d":isExcl?"color:#ff6b6b":"";
+    var btn=h("div",{className:"eb",style:bg});
+    btn.appendChild(h("div",{className:"en",style:nameColor},name));
+    btn.appendChild(h("div",{className:"et "+(isExcl?"absent":"vacation")},(wi+1)+"번"+(isExcl?" ("+exclMapNow[name]+")":"")));
     btn.onclick=function(){
       var map=Object.assign({},state.firstWorkerDays||{});
       map[k]=name;
@@ -694,7 +701,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v8.8</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v8.9</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -758,8 +765,9 @@ function render(){
     // 대양1번 버튼 (관리자만, 일요일 제외)
     if(day!=="일"&&isAdmin()){
       var fw=state.firstWorkerDays&&state.firstWorkerDays[dateKey(dateObjs[idx])];
-      var btnF=h("div",{style:"font-size:9px;padding:2px 3px;border-radius:6px;text-align:center;cursor:pointer;background:"+(fw?"#4a9eff33":"#ffffff11")+";border:1px solid "+(fw?"#4a9eff":"#ffffff22")+";color:"+(fw?"#4a9eff":"#666")},fw?"대양·"+WORKERS.indexOf(fw)+1+"번":"대양1번");
-      (function(i,dateObj){btnF.onclick=function(){showFirstWorkerPopup(i,dateObj);};})(idx,dateObjs[idx]);
+      var fwNum=fw?(WORKERS.indexOf(fw)+1)+'번':'1번?';
+      var btnF=h("div",{style:"font-size:9px;padding:2px 3px;border-radius:6px;text-align:center;cursor:pointer;background:"+(fw?"#4a9eff33":"#ffffff11")+";border:1px solid "+(fw?"#4a9eff":"#ffffff22")+";color:"+(fw?"#4a9eff":"#666")},fwNum);
+      (function(i,dateObj,m){btnF.onclick=function(){showFirstWorkerPopup(i,dateObj,m);};})(idx,dateObjs[idx],merged[idx]||{});
       col.appendChild(btnF);
     }
 
