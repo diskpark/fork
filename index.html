@@ -538,21 +538,23 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
         prevSun=[];prevYac=[];prevActBib=sw;
       } else {
         if(d===0||prevCar===null){
-          // 첫날: firstWorker부터 순방향
-          var li=WORKERS.indexOf(firstWorker);
-          var rD=pickFwd(6,li,exclWithBib),rS=pickFwd(4,rD.next,exclWithBib),rJ=pickFwd(4,rS.next,exclWithBib);
+          // 첫날 차없음: getFirstWorker로
+          var fw0=getFirstWorker(d);
+          var li0=fw0?WORKERS.indexOf(fw0):0;
+          var rD=pickFwd(6,li0,exclWithBib),rS=pickFwd(4,rD.next,exclWithBib),rJ=pickFwd(4,rS.next,exclWithBib);
           var dae=rD.team,sun=rS.team,jay=rJ.team;
         } else if(prevCar===true){
           // 차있음→차없음 전환: 전날 비번 말번부터 역순
-          var liStart=WORKERS.indexOf(prevActBib[prevActBib.length-1]);
+          var prevBibRef=prevActBib.length>0?prevActBib:prevDae;
+          var liStart=WORKERS.indexOf(prevBibRef[prevBibRef.length-1]);
           var rJ=pickRev(4,liStart,exclWithBib);
           var rS=pickRev(4,rJ.next,exclWithBib);
           var rD=pickRev(6,rS.next,exclWithBib);
           var jay=rJ.team,sun=rS.team,dae=rD.team;
         } else {
           // 차없음 연속: 전날 대양 1번 앞번호 = 제이 말번, 역순으로 제이→성우→대양
-          var liStart=(WORKERS.indexOf(prevDae[0])-1+N)%N;
-          var rJ=pickRev(4,liStart,exclWithBib);
+          var liStart2=prevDae.length>0?(WORKERS.indexOf(prevDae[0])-1+N)%N:0;
+          var rJ=pickRev(4,liStart2,exclWithBib);
           var rS=pickRev(4,rJ.next,exclWithBib);
           var rD=pickRev(6,rS.next,exclWithBib);
           var jay=rJ.team,sun=rS.team,dae=rD.team;
@@ -701,7 +703,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.0</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.1</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
