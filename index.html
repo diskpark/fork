@@ -516,24 +516,27 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
       // 차없음 또는 일요일
       var isSunday=weekDays&&weekDays[d]==="일";
       if(isSunday&&sundayCount>0){
-        // 일요근무 배정
-        // 전날 차있음→차없음: 전날 비번 말번부터 역순
-        // 전날 차없음 연속: 전날 대양 1번 앞번호부터 역순
-        // 오늘이 첫날(d=0)이면서 일요일인 경우: 실제 어제 데이터가 없으므로
-        // firstWorker를 내일(월요일) 대양1번 기준으로 사용해 역산
-        var li;
-        if(d===0&&prevCar===null){
-          // firstWorker 앞 sundayCount명을 일요근무로 (월요일 대양1번 직전)
-          li=(fi-1+N)%N;
-        } else if(prevCar===false){
-          li=(WORKERS.indexOf(prevDae[0])-1+N)%N;
+        var fwSun=getFirstWorker(d);
+        var sw;
+        if(fwSun){
+          // 일요근무 1번 지정된 경우: 지정번호부터 순방향
+          var fiSun=WORKERS.indexOf(fwSun);
+          sw=pickFwd(sundayCount,fiSun,exclWithBib).team;
         } else {
-          li=WORKERS.indexOf(bib[bib.length-1]);
+          // 미지정: 기존 로직 (전날 비번 말번부터 역순)
+          var li;
+          if(d===0&&prevCar===null){
+            var fw0=getFirstWorker(d+1);
+            li=fw0?(WORKERS.indexOf(fw0)-1+N)%N:0;
+          } else if(prevCar===false){
+            li=prevDae.length>0?(WORKERS.indexOf(prevDae[0])-1+N)%N:0;
+          } else {
+            li=bib.length>0?WORKERS.indexOf(bib[bib.length-1]):0;
+          }
+          sw=pickRev(sundayCount,li,exclWithBib).team;
         }
-        var sw=pickRev(sundayCount,li,exclWithBib).team;
         var rest=avail.filter(function(w){return sw.indexOf(w)<0&&bib.indexOf(w)<0;});
         result.push({hasCar:false,dae:[],sun:[],yac:[],jay:[],jad:jadForced,sunw:sortByNum(sw),bib:bib,rest:rest,excl:exclMap,isSun:true});
-        cursor=fi; // 월요일은 firstWorker부터 시작
         prevDae=sw.length>=6?sw.slice(0,6):sw;
         prevSun=[];prevYac=[];prevActBib=sw;
       } else {
@@ -703,7 +706,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.1</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.2</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -765,7 +768,7 @@ function render(){
     col.appendChild(btnE);
 
     // 대양1번 버튼 (관리자만, 일요일 제외)
-    if(day!=="일"&&isAdmin()){
+    if(isAdmin()){
       var fw=state.firstWorkerDays&&state.firstWorkerDays[dateKey(dateObjs[idx])];
       var fwNum=fw?(WORKERS.indexOf(fw)+1)+'번':'1번?';
       var btnF=h("div",{style:"font-size:9px;padding:2px 3px;border-radius:6px;text-align:center;cursor:pointer;background:"+(fw?"#4a9eff33":"#ffffff11")+";border:1px solid "+(fw?"#4a9eff":"#ffffff22")+";color:"+(fw?"#4a9eff":"#666")},fwNum);
