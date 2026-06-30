@@ -706,7 +706,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.6</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.7</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
@@ -868,39 +868,6 @@ function render(){
     myCard.appendChild(myGrid);
   }
   cont.appendChild(myCard);
-
-  // 대양 1번
-  var d1Card=h("div",{className:"card",style:"border:1px solid #4a9eff22"});
-  var d1Head=h("div",{style:"display:flex;justify-content:space-between;align-items:center;"+(isAdmin()?"cursor:pointer":"")});
-  var d1TitleEl=document.createElement("div");
-  d1TitleEl.style.cssText="font-size:11px;font-weight:700;letter-spacing:2px;color:#4a9eff";
-  d1TitleEl.textContent="▪ 대양 1번"+(state.firstWorker?" · "+state.firstWorker:"" );
-  d1Head.appendChild(d1TitleEl);
-  var d1Toggle=h("div",{style:"color:#aaa;font-size:11px;font-weight:700"},state.d1Open?"▲ 접기":"▼ 펼치기");
-  d1Head.appendChild(d1Toggle);
-  d1Head.onclick=function(){var next=!state.d1Open;localStorage.setItem('d1Open',next);setState({d1Open:next});};
-  d1Card.appendChild(d1Head);
-  if(state.d1Open){
-    var d1Grid=h("div",{className:"grid4",style:"margin-top:10px"});
-    var hist=state.history||[];
-    WORKERS.forEach(function(name){
-      var btn=h("div",{className:"wbtn"+(state.firstWorker===name?" sel":""),style:"position:relative;padding-bottom:14px"});
-      var nameEl=document.createElement("div");nameEl.textContent=name;
-      btn.appendChild(nameEl);
-      hist.forEach(function(h2){
-        if(h2.name===name){
-          var d=new Date(h2.date),t=new Date();t.setHours(0,0,0,0);d.setHours(0,0,0,0);
-          var diff=Math.round((t-d)/(1000*60*60*24));
-          var lbl=diff===0?"오늘 1번":diff===1?"어제 1번":"";
-          if(lbl){var tag=document.createElement("div");tag.style.cssText="font-size:9px;color:#ffd93d;font-weight:700;margin-top:2px";tag.textContent=lbl;btn.appendChild(tag);}
-        }
-      });
-      (function(n){btn.onclick=function(){selectFirstWorker(n);};})(name);
-      d1Grid.appendChild(btn);
-    });
-    d1Card.appendChild(d1Grid);
-  }
-  cont.appendChild(d1Card);
 
   if(!sched){cont.appendChild(h("div",{className:"hint"},"👆 날짜 헤더의 대양1번 버튼을 눌러 설정해주세요"));}
   if(sched&&state.myName){cont.appendChild(renderMySchedule(sched,wk,wd,dateObjs));}
