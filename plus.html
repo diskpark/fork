@@ -14,14 +14,14 @@ body{background:#0d0d1a;color:#e0e0f0;font-family:-apple-system,BlinkMacSystemFo
 .header-sub{color:#4a9eff88;font-size:11px;letter-spacing:3px;font-weight:700;margin-bottom:2px}
 .header-date{font-size:13px;color:#888}
 .day-row{display:flex;gap:4px}
-.day-col{flex:1;display:flex;flex-direction:column;gap:4px}
-.day-label{font-size:12px;font-weight:700;text-align:center}
-.day-date{font-size:9px;color:#444;text-align:center}
-.btn{border-radius:8px;padding:5px 2px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;border:1px solid #333;background:#1a1a2e;color:#444;user-select:none}
+.day-col{flex:1;display:flex;flex-direction:column;gap:4px;align-items:stretch}
+.day-label{font-size:12px;font-weight:700;text-align:center;height:16px;display:flex;align-items:center;justify-content:center}
+.day-date{font-size:9px;color:#444;text-align:center;height:13px;display:flex;align-items:center;justify-content:center}
+.btn{border-radius:8px;padding:5px 2px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;border:1px solid #333;background:#1a1a2e;color:#444;user-select:none;height:28px;display:flex;align-items:center;justify-content:center}
 .btn.on-yes{background:#4a9eff;color:#fff;border-color:#4a9eff}
 .btn.on-no{background:#ff6b6b;color:#fff;border-color:#ff6b6b}
-.btn.has-excl{background:#ff9f7f22;color:#ff9f7f;border-color:#ff9f7f66;min-height:28px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px}
-.btn.no-excl{min-height:28px;display:flex;align-items:center;justify-content:center}
+.btn.has-excl{background:#ff9f7f22;color:#ff9f7f;border-color:#ff9f7f66;height:28px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px}
+.btn.no-excl{height:28px;display:flex;align-items:center;justify-content:center}
 .vac-btn-wrap{margin-top:10px;display:flex;gap:8px;justify-content:center}
 .vac-btn{display:inline-block;padding:6px 16px;border-radius:20px;background:#ffd93d22;border:1px solid #ffd93d44;color:#ffd93d;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px}
 .content{padding:16px 16px 60px;max-width:540px;margin:0 auto}
@@ -124,26 +124,14 @@ function setAdmin(v){localStorage.setItem('adminMode',v?'true':'false');}
 function syncFromFirebase(callback){
   fetch(FB_URL+'.json').then(function(r){return r.json();}).then(function(data){
     if(data){
-      // 2주차 데이터 병합
-      if(data.plus_carDays){
-        var pcd=data.plus_carDays;
-        Object.keys(pcd).forEach(function(k){if(!state.carDays[k])state.carDays[k]=pcd[k];});
-      }
-      if(data.plus_dayExcludes){
-        var pde=data.plus_dayExcludes;
-        Object.keys(pde).forEach(function(k){if(!state.dayExcludes[k])state.dayExcludes[k]=pde[k];});
-      }
-      if(data.plus_firstWorkerDays){
-        var pfw=data.plus_firstWorkerDays;
-        Object.keys(pfw).forEach(function(k){if(!state.firstWorkerDays[k])state.firstWorkerDays[k]=pfw[k];});
-      }
+      // 1주차 데이터 먼저 적용
       if(data.carDays){
-        state.carDays=data.carDays; // 날짜키 객체 그대로
+        state.carDays=Object.assign({},data.carDays);
         localStorage.setItem('carPlan',JSON.stringify(data.carDays));
       }
       if(data.absentWorkers&&Array.isArray(data.absentWorkers))state.absentWorkers=data.absentWorkers;
       if(data.dayExcludes){
-        state.dayExcludes=data.dayExcludes; // 날짜키 객체 그대로
+        state.dayExcludes=Object.assign({},data.dayExcludes);
         localStorage.setItem('dayExcludes',JSON.stringify(data.dayExcludes));
       }
       if(typeof data.sundayCount==='number'){
@@ -155,8 +143,24 @@ function syncFromFirebase(callback){
         localStorage.setItem('firstWorker',JSON.stringify({date:new Date().toDateString(),name:data.firstWorker}));
       }
       if(data.firstWorkerDays){
-        state.firstWorkerDays=data.firstWorkerDays;
+        state.firstWorkerDays=Object.assign({},data.firstWorkerDays);
         localStorage.setItem('firstWorkerDays',JSON.stringify(data.firstWorkerDays));
+      }
+      // 2주차 데이터 병합 (1주차 덮어쓰지 않음)
+      if(data.plus_carDays){
+        Object.keys(data.plus_carDays).forEach(function(k){
+          if(!(k in state.carDays))state.carDays[k]=data.plus_carDays[k];
+        });
+      }
+      if(data.plus_dayExcludes){
+        Object.keys(data.plus_dayExcludes).forEach(function(k){
+          if(!(k in state.dayExcludes))state.dayExcludes[k]=data.plus_dayExcludes[k];
+        });
+      }
+      if(data.plus_firstWorkerDays){
+        Object.keys(data.plus_firstWorkerDays).forEach(function(k){
+          if(!(k in state.firstWorkerDays))state.firstWorkerDays[k]=data.plus_firstWorkerDays[k];
+        });
       }
     }
     autoSetFirstWorker();
@@ -719,7 +723,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="2주예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.7p</span>";
+  subEl.innerHTML="2주예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.9p</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
