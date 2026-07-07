@@ -803,13 +803,12 @@ function render(){
 
   var bottomRow=h("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-top:10px;min-height:36px"});
   var infoLeft=h("div",{style:"flex:1;padding-right:8px"});
-  if(allVacList.length>0||allAbsList.length>0||allSwList.length>0||allJadList.length>0){
+  if(allVacList.length>0||allAbsList.length>0||allSwList.length>0){
     var infoLine=document.createElement("div");
     infoLine.style.cssText="font-size:13px;font-weight:700;line-height:1.8;display:flex;flex-wrap:wrap;gap:8px";
     if(allVacList.length>0){var sp=document.createElement("span");sp.style.color="#ffd93d";sp.textContent="휴가·"+allVacList.join(" ");infoLine.appendChild(sp);}
     if(allAbsList.length>0){var sp=document.createElement("span");sp.style.color="#ff6b6b";sp.textContent="결근·"+allAbsList.join(" ");infoLine.appendChild(sp);}
     if(allSwList.length>0){var sp=document.createElement("span");sp.style.color="#88eeff";sp.textContent="씨월드·"+allSwList.join(" ");infoLine.appendChild(sp);}
-    if(allJadList.length>0){var sp=document.createElement("span");sp.style.color="#88cc88";sp.textContent="차·"+allJadList.join(" ");infoLine.appendChild(sp);}
     infoLeft.appendChild(infoLine);
   }
   var infoRight=h("div",{style:"display:flex;flex-direction:column;align-items:flex-end;gap:2px"});
