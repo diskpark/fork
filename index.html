@@ -466,8 +466,11 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
         var inDae=dae.indexOf(ret)>=0;
         var inBib=bib.indexOf(ret)>=0;
         if(inDae||inBib){
-          // 현장에서 제거 후 자동차(차있음) 또는 제이 말번(차없음)
           if(dae.indexOf(ret)>=0)dae=dae.filter(function(w){return w!==ret;});
+          // 빈자리 cursor로 보충
+          var used2=dae.concat(sun,yac,jay,bib,jadForced,jadExtra,[ret]);
+          var rf2=pickFwd(1,cursor,exclAll.concat(used2));
+          if(rf2.team.length){dae=sortByNum(dae.concat(rf2.team));cursor=rf2.next;}
           if(hasCar){jadExtra.push(ret);}
           else{jay.push(ret);}
         }
@@ -498,13 +501,19 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
           } else {sun=newSun;}
         } else {dae=newDae;}
       });
-      // 자동차 지정자를 현장에서 제거하고 jad로 이동
+      // 자동차 지정자를 현장에서 제거하고 jad로 이동, 빈자리 보충
       jadForced.forEach(function(w){
         dae=dae.filter(function(x){return x!==w;});
         sun=sun.filter(function(x){return x!==w;});
         yac=yac.filter(function(x){return x!==w;});
         jay=jay.filter(function(x){return x!==w;});
       });
+      // 빈자리 cursor로 보충
+      var usedNow=dae.concat(sun,yac,jay,bib,jadForced);
+      while(dae.length<6){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;dae=sortByNum(dae.concat(rf.team));usedNow.push(rf.team[0]);cursor=rf.next;}
+      while(sun.length<4){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;sun=sortByNum(sun.concat(rf.team));usedNow.push(rf.team[0]);cursor=rf.next;}
+      while(yac.length<6){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;yac=sortByNum(yac.concat(rf.team));usedNow.push(rf.team[0]);cursor=rf.next;}
+      while(jay.length<4){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;jay=sortByNum(jay.concat(rf.team));usedNow.push(rf.team[0]);cursor=rf.next;}
       var assigned=dae.concat(sun,yac,jay,bib);
       var jad=avail.filter(function(w){return assigned.indexOf(w)<0&&vacRet.indexOf(w)<0&&jadForced.indexOf(w)<0;});
       jadExtra.forEach(function(ret){if(jad.indexOf(ret)<0)jad.push(ret);});
