@@ -435,11 +435,11 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
       var dae,sun,yac,jay;
       var fw=getFirstWorker(d);
       if(!fw){
-        // 대양1번 미설정시 빈 배정
         dae=[];sun=[];yac=[];jay=[];cursor=0;
       } else {
         var fi=WORKERS.indexOf(fw);
-        var all20=pickFwd(20,fi,exclWithBibCar);
+        // 자동차도 제외하고 바로 20명 배정
+        var all20=pickFwd(20,fi,exclAll.concat(jadForced));
         dae=all20.team.slice(0,6);
         sun=all20.team.slice(6,10);
         yac=all20.team.slice(10,16);
@@ -492,19 +492,6 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
           } else {sun=newSun;}
         } else {dae=newDae;}
       });
-      // 자동차 지정자를 현장에서 제거하고 jad로 이동, 빈자리 보충
-      jadForced.forEach(function(w){
-        dae=dae.filter(function(x){return x!==w;});
-        sun=sun.filter(function(x){return x!==w;});
-        yac=yac.filter(function(x){return x!==w;});
-        jay=jay.filter(function(x){return x!==w;});
-      });
-      // 빈자리 cursor로 보충
-      var usedNow=dae.concat(sun,yac,jay,bib,jadForced);
-      while(dae.length<6){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;dae.push(rf.team[0]);usedNow.push(rf.team[0]);cursor=rf.next;}
-      while(sun.length<4){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;sun.push(rf.team[0]);usedNow.push(rf.team[0]);cursor=rf.next;}
-      while(yac.length<6){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;yac.push(rf.team[0]);usedNow.push(rf.team[0]);cursor=rf.next;}
-      while(jay.length<4){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;jay.push(rf.team[0]);usedNow.push(rf.team[0]);cursor=rf.next;}
       var assigned=dae.concat(sun,yac,jay,bib);
       var jad=avail.filter(function(w){return assigned.indexOf(w)<0&&vacRet.indexOf(w)<0&&jadForced.indexOf(w)<0;});
       jadExtra.forEach(function(ret){if(jad.indexOf(ret)<0)jad.push(ret);});
@@ -715,7 +702,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v10.2</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v10.3</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
