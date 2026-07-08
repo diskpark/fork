@@ -444,9 +444,9 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
       }
       var jadExtra=[];
       var vacRetExtra=[];
+      // 결근복귀자: 자기 순번에 정상 삽입 + 연쇄 밀림 (패널티 없음)
       absRet.forEach(function(ret){
         if(dae.indexOf(ret)>=0||sun.indexOf(ret)>=0||yac.indexOf(ret)>=0||jay.indexOf(ret)>=0)return;
-        // 순번대로 삽입 + 연쇄 밀림
         var newDae=sortByNum(dae.concat([ret]));
         if(newDae.length>6){
           var p=newDae.pop();dae=newDae;
@@ -462,19 +462,6 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
             } else{yac=newYac;}
           } else{sun=newSun;}
         } else{dae=newDae;}
-        // 패널티: 대양 순번이거나 비번 순번일 때만 열외
-        var inDae=dae.indexOf(ret)>=0;
-        var inBib=bib.indexOf(ret)>=0;
-        if(inDae||inBib){
-          if(dae.indexOf(ret)>=0)dae=dae.filter(function(w){return w!==ret;});
-          // 빈자리 cursor로 보충
-          var used2=dae.concat(sun,yac,jay,bib,jadForced,jadExtra,[ret]);
-          var rf2=pickFwd(1,cursor,exclAll.concat(used2));
-          if(rf2.team.length){dae=sortByNum(dae.concat(rf2.team));cursor=rf2.next;}
-          if(hasCar){jadExtra.push(ret);}
-          else{jay.push(ret);}
-        }
-        // 성우/야차/제이 순번이면 그냥 그 자리에 정상 배치
       });
       // 휴가복귀자: 순번대로 대양에 삽입, 연쇄 밀림 (대양→성우→야차→제이→자동차)
       vacRet.forEach(function(ret){
@@ -715,7 +702,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v9.9</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v10.0</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
