@@ -497,16 +497,25 @@ function calcSchedule(carDays,dayExcl,firstWorkerDays,sundayCount,weekDays,dateO
       });
       // 빈자리 cursor로 보충
       var usedNow=dae.concat(sun,yac,jay,bib,jadForced);
-      while(dae.length<6){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;dae=sortByNum(dae.concat(rf.team));usedNow.push(rf.team[0]);cursor=rf.next;}
-      while(sun.length<4){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;sun=sortByNum(sun.concat(rf.team));usedNow.push(rf.team[0]);cursor=rf.next;}
-      while(yac.length<6){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;yac=sortByNum(yac.concat(rf.team));usedNow.push(rf.team[0]);cursor=rf.next;}
-      while(jay.length<4){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;jay=sortByNum(jay.concat(rf.team));usedNow.push(rf.team[0]);cursor=rf.next;}
+      while(dae.length<6){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;dae.push(rf.team[0]);usedNow.push(rf.team[0]);cursor=rf.next;}
+      while(sun.length<4){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;sun.push(rf.team[0]);usedNow.push(rf.team[0]);cursor=rf.next;}
+      while(yac.length<6){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;yac.push(rf.team[0]);usedNow.push(rf.team[0]);cursor=rf.next;}
+      while(jay.length<4){var rf=pickFwd(1,cursor,exclAll.concat(usedNow));if(!rf.team.length)break;jay.push(rf.team[0]);usedNow.push(rf.team[0]);cursor=rf.next;}
       var assigned=dae.concat(sun,yac,jay,bib);
       var jad=avail.filter(function(w){return assigned.indexOf(w)<0&&vacRet.indexOf(w)<0&&jadForced.indexOf(w)<0;});
       jadExtra.forEach(function(ret){if(jad.indexOf(ret)<0)jad.push(ret);});
       jadForced.forEach(function(w){if(jad.indexOf(w)<0)jad.push(w);});
       vacRetExtra.forEach(function(w){if(jad.indexOf(w)<0)jad.push(w);});
-      result.push({hasCar:true,dae:sortByNum(dae),sun:sortByNum(sun),yac:sortByNum(yac),jay:sortByNum(jay),jad:jad,bib:bib,rest:[],excl:exclMap});
+      function sortFromFw(arr){
+        if(!fw||arr.length===0)return sortByNum(arr);
+        var fiIdx=WORKERS.indexOf(fw);
+        return arr.slice().sort(function(a,b){
+          var ia=(WORKERS.indexOf(a)-fiIdx+N)%N;
+          var ib=(WORKERS.indexOf(b)-fiIdx+N)%N;
+          return ia-ib;
+        });
+      }
+      result.push({hasCar:true,dae:sortFromFw(dae),sun:sortFromFw(sun),yac:sortFromFw(yac),jay:sortFromFw(jay),jad:jad,bib:bib,rest:[],excl:exclMap});
       prevDae=dae;prevSun=sun;prevYac=yac;prevActBib=bib;
     } else {
       // 차없음 또는 일요일
@@ -702,7 +711,7 @@ function render(){
   var htitle=h("div",{className:"header-title"});
   var subEl=document.createElement("div");
   subEl.className="header-sub";
-  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v10.0</span>";
+  subEl.innerHTML="주간예상근무표 <span style='color:#4a9eff44;font-size:10px'>v10.1</span>";
   var reloadBtn=document.createElement("span");
   reloadBtn.style.cssText="color:#ffd93d;font-size:14px;cursor:pointer;margin-left:8px";
   reloadBtn.textContent="🔄";
